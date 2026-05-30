@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply text-base;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    @apply min-h-[44px];
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-primary-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-gray-700 transition-all active:scale-95;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary-600 text-primary-600 px-4 py-3 rounded-lg font-medium hover:bg-primary-50 transition-all active:scale-95;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm p-4;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center px-4 pb-safe pt-2 z-50;
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center space-y-1 text-gray-600 transition-colors;
+  }
+
+  .bottom-nav-item.active {
+    @apply text-primary-600;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}
