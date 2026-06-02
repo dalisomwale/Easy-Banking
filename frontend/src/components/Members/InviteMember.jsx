@@ -17,7 +17,7 @@ const InviteMember = () => {
     try {
       await api.post(`/members/invite/${groupId}`, { email });
       toast.success("Member added successfully");
-      navigate("/members");
+      navigate("/app/members"); // ✅ fixed: redirect to member list under /app
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to add member");
     } finally {
@@ -28,7 +28,7 @@ const InviteMember = () => {
   return (
     <div className="max-w-md mx-auto px-2">
       <button
-        onClick={() => navigate("/members")}
+        onClick={() => navigate("/app/members")} // ✅ fixed: back to members list
         className="flex items-center gap-2 text-emerald-600 hover:text-emerald-800 mb-4 transition"
       >
         <FiArrowLeft /> Back to Members

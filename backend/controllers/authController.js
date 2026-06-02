@@ -2,16 +2,14 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../config/database");
 
-// Register a new user and automatically create a member record
+// Register a new user (no member record yet)
 const register = async (req, res) => {
   try {
     const { name, email, password, nrc, phone, address } = req.body;
     if (!name || !email || !password || !nrc || !phone) {
-      return res
-        .status(400)
-        .json({
-          message: "All fields required: name, email, password, nrc, phone",
-        });
+      return res.status(400).json({
+        message: "All fields required: name, email, password, nrc, phone",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -19,27 +17,17 @@ const register = async (req, res) => {
     await connection.beginTransaction();
 
     try {
-      // Insert user
+      // Insert user only (no member)
       const [userResult] = await connection.query(
         "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
         [name, email, hashedPassword],
       );
       const userId = userResult.insertId;
 
-      // Create member record (same name, join date today, no group yet)
-      const joinDate = new Date().toISOString().split("T")[0];
-      const [memberResult] = await connection.query(
-        `INSERT INTO members 
-                 (fullname, phone, nrc, address, join_date, created_by, user_id, status) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'active')`,
-        [name, phone, nrc, address || null, joinDate, userId, userId],
-      );
-
       await connection.commit();
       res.status(201).json({
         message: "User registered successfully. You can now log in.",
         userId,
-        memberId: memberResult.insertId,
       });
     } catch (error) {
       await connection.rollback();
@@ -49,14 +37,14 @@ const register = async (req, res) => {
     }
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
-      return res.status(400).json({ message: "Email or NRC already exists" });
+      return res.status(400).json({ message: "Email already exists" });
     }
     console.error("Registration error:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Login user and return member_id if linked
+// Login user (no change)
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;

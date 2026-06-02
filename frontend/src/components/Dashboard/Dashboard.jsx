@@ -4,6 +4,7 @@ import {
   FiDollarSign,
   FiTrendingUp,
   FiActivity,
+  FiBookOpen,
 } from "react-icons/fi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -29,7 +30,6 @@ const Dashboard = () => {
     return isNaN(num) ? 0 : num;
   };
 
-  // Fetch member_id if missing (for member role)
   useEffect(() => {
     const fetchMemberId = async () => {
       if (!groupId || role !== "member") return;
@@ -41,9 +41,7 @@ const Dashboard = () => {
         console.error("Failed to fetch member_id:", err);
       }
     };
-    if (role === "member" && !memberId) {
-      fetchMemberId();
-    }
+    if (role === "member" && !memberId) fetchMemberId();
   }, [groupId, role, memberId]);
 
   useEffect(() => {
@@ -82,29 +80,138 @@ const Dashboard = () => {
     const loadData = async () => {
       setLoading(true);
       await fetchDashboardStats();
-      if (role === "member" && memberId) {
-        await fetchMemberLoanSummary();
-      }
+      if (role === "member" && memberId) await fetchMemberLoanSummary();
       setLoading(false);
     };
-
     if (groupId) loadData();
   }, [groupId, role, memberId]);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
       </div>
     );
-  }
 
   const formatMoney = (value) => `K${value.toFixed(2)}`;
 
-  // Member dashboard – Wealthy Greens theme
+  // Admin Dashboard with orange accents
+  const AdminDashboard = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 shadow-sm border border-emerald-200">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-emerald-700 text-sm font-medium">
+                Total Group Funds
+              </p>
+              <p className="text-3xl font-bold text-emerald-800 mt-2">
+                {formatMoney(stats.total_funds)}
+              </p>
+              <p className="text-xs text-emerald-600 mt-2">
+                Savings + Repayments
+              </p>
+            </div>
+            <div className="bg-emerald-200 p-3 rounded-full">
+              <FiDollarSign className="text-emerald-700" size={28} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Members</p>
+              <p className="text-3xl font-bold text-emerald-700 mt-2">
+                {stats.total_members}
+              </p>
+            </div>
+            <div className="bg-emerald-100 p-3 rounded-full">
+              <FiUsers className="text-emerald-600" size={28} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Active Loans</p>
+              <p className="text-3xl font-bold text-amber-600 mt-2">
+                {stats.active_loans_count}
+              </p>
+              <p className="text-xs text-gray-400">
+                Total: {formatMoney(stats.total_loans_amount)}
+              </p>
+            </div>
+            <div className="bg-amber-100 p-3 rounded-full">
+              <FiBookOpen className="text-amber-600" size={28} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Savings</p>
+              <p className="text-3xl font-bold text-emerald-700 mt-2">
+                {formatMoney(stats.total_savings)}
+              </p>
+            </div>
+            <div className="bg-emerald-100 p-3 rounded-full">
+              <FiTrendingUp className="text-emerald-600" size={28} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <FiActivity className="text-amber-500" size={20} />
+            <h2 className="text-xl font-semibold text-gray-800">
+              Recent Activity
+            </h2>
+          </div>
+        </div>
+        <div className="p-6">
+          {stats.recent_transactions.length === 0 ? (
+            <p className="text-gray-400 text-center py-8">
+              No transactions yet
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {stats.recent_transactions.map((tx, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0"
+                >
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {tx.member_name}
+                    </p>
+                    <p className="text-xs text-gray-400 capitalize">
+                      {tx.type}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p
+                      className={`font-semibold ${tx.type === "saving" ? "text-emerald-600" : "text-amber-600"}`}
+                    >
+                      {tx.type === "saving" ? "+" : "-"}{" "}
+                      {formatMoney(tx.amount)}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(tx.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Member Dashboard (unchanged but keep orange for loan)
   const MemberDashboard = () => (
     <div className="space-y-5 max-w-md mx-auto px-2">
-      {/* Top card: Group Funds – green gradient */}
       <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 shadow-sm border border-emerald-200">
         <div className="flex items-center justify-between">
           <div>
@@ -113,7 +220,7 @@ const Dashboard = () => {
               {formatMoney(stats.total_funds)}
             </p>
             <p className="text-xs text-emerald-600 mt-2">
-              Total savings + repayments
+              Savings + repayments
             </p>
           </div>
           <div className="bg-emerald-200 p-3 rounded-full">
@@ -121,8 +228,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Two smaller metric cards: Savings + Outstanding Loan */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
@@ -145,85 +250,19 @@ const Dashboard = () => {
               <p className="text-gray-500 text-xs uppercase tracking-wide">
                 Outstanding Loan
               </p>
-              <p className="text-xl font-semibold text-emerald-700 mt-1">
+              <p className="text-xl font-semibold text-amber-600 mt-1">
                 {formatMoney(memberLoanTotal)}
               </p>
             </div>
-            <div className="bg-emerald-100 p-2 rounded-full">
-              <FiTrendingUp className="text-emerald-600" size={20} />
+            <div className="bg-amber-100 p-2 rounded-full">
+              <FiTrendingUp className="text-amber-600" size={20} />
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity – clean, green accents */}
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mt-2">
-        <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
-          <FiActivity className="text-emerald-500" size={18} />
-          <h2 className="text-lg font-semibold text-gray-700">
-            Recent Activity
-          </h2>
-        </div>
-        {stats.recent_transactions.length === 0 ? (
-          <p className="text-gray-400 text-center py-6 text-sm">
-            No transactions yet
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {stats.recent_transactions.map((tx, idx) => (
-              <div key={idx} className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium text-gray-800">{tx.member_name}</p>
-                  <p className="text-xs text-gray-400 capitalize">{tx.type}</p>
-                </div>
-                <div className="text-right">
-                  <p
-                    className={`font-semibold ${tx.type === "saving" ? "text-emerald-600" : "text-emerald-700"}`}
-                  >
-                    {tx.type === "saving" ? "+" : "-"} {formatMoney(tx.amount)}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(tx.date).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Admin dashboard – also green theme
-  const AdminDashboard = () => (
-    <div className="space-y-5 max-w-md mx-auto px-2">
-      <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-5 shadow-sm border border-emerald-200">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-emerald-700 text-sm">Total Group Funds</p>
-            <p className="text-2xl font-bold text-emerald-800">
-              {formatMoney(stats.total_funds)}
-            </p>
-          </div>
-          <div className="bg-emerald-200 p-3 rounded-full">
-            <FiDollarSign className="text-emerald-700" size={24} />
-          </div>
-        </div>
-      </div>
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-gray-500 text-sm">Total Members</p>
-            <p className="text-2xl font-bold">{stats.total_members}</p>
-          </div>
-          <div className="bg-gray-100 p-3 rounded-full">
-            <FiUsers className="text-gray-600" size={22} />
           </div>
         </div>
       </div>
       <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
-          <FiActivity className="text-emerald-500" size={18} />
+          <FiActivity className="text-amber-500" size={18} />
           <h2 className="text-lg font-semibold text-gray-700">
             Recent Activity
           </h2>
@@ -242,7 +281,7 @@ const Dashboard = () => {
                 </div>
                 <div className="text-right">
                   <p
-                    className={`font-semibold ${tx.type === "saving" ? "text-emerald-600" : "text-emerald-700"}`}
+                    className={`font-semibold ${tx.type === "saving" ? "text-emerald-600" : "text-amber-600"}`}
                   >
                     {tx.type === "saving" ? "+" : "-"} {formatMoney(tx.amount)}
                   </p>
@@ -260,5 +299,4 @@ const Dashboard = () => {
 
   return role === "admin" ? <AdminDashboard /> : <MemberDashboard />;
 };
-
 export default Dashboard;

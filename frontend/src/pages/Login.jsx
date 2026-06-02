@@ -18,22 +18,13 @@ const Login = () => {
     try {
       const res = await api.post("/auth/login", formData);
       const { token, user } = res.data;
-
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-
-      // Store member_id if present (for members)
-      if (user.member_id) {
-        localStorage.setItem("member_id", user.member_id);
-      } else {
-        // Remove any stale member_id if user is not a member
-        localStorage.removeItem("member_id");
-      }
-
+      if (user.member_id) localStorage.setItem("member_id", user.member_id);
+      else localStorage.removeItem("member_id");
       toast.success("Welcome back!");
       navigate("/group-select");
     } catch (error) {
-      console.error("Login error:", error);
       toast.error(error.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
@@ -41,37 +32,108 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-primary-600 p-8 text-center">
-          <h1 className="text-4xl font-bold text-white">Easy Banking</h1>
-          <p className="text-primary-100 mt-2">Village Banking System</p>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center p-4">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md overflow-hidden border border-white/20">
+        <div className="bg-emerald-700/50 p-4 sm:p-6 text-center">
+          <div className="flex justify-center mb-2 sm:mb-3">
+            <div className="bg-white/10 p-1.5 sm:p-2 rounded-lg">
+              <svg
+                width={36}
+                height={36}
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-white sm:w-12 sm:h-12"
+              >
+                <path
+                  d="M4 9.5L12 4L20 9.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <rect
+                  x="6"
+                  y="9.5"
+                  width="12"
+                  height="12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+                <line
+                  x1="9"
+                  y1="12"
+                  x2="9"
+                  y2="21.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+                <line
+                  x1="12"
+                  y1="12"
+                  x2="12"
+                  y2="21.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+                <line
+                  x1="15"
+                  y1="12"
+                  x2="15"
+                  y2="21.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">
+            Easy Banking
+          </h1>
+          <p className="text-emerald-100 text-xs sm:text-sm mt-1">
+            A Village Banking System
+          </p>
         </div>
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="p-5 sm:p-8 space-y-4 sm:space-y-6"
+        >
           <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
+            <label className="block text-sm font-medium text-emerald-100 mb-1 sm:mb-2">
+              Email
+            </label>
             <div className="relative">
-              <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <FiMail
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+                size={16}
+              />
               <input
                 type="email"
-                className="input-field pl-10"
+                className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-sm sm:text-base bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                placeholder="admin@easybanking.com"
+                placeholder="name@example.com"
                 required
                 autoComplete="email"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium text-emerald-100 mb-1 sm:mb-2">
+              Password
+            </label>
             <div className="relative">
-              <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <FiLock
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+                size={16}
+              />
               <input
                 type="password"
-                className="input-field pl-10"
+                className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-sm sm:text-base bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
@@ -85,19 +147,20 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 transition text-sm sm:text-base"
           >
-            <FiLogIn /> {loading ? "Logging in..." : "Login"}
+            <FiLogIn size={16} /> {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-        <div className="pb-8 text-center">
+        <div className="pb-5 sm:pb-8 text-center">
           <button
             onClick={() => navigate("/register")}
-            className="text-primary-600 hover:underline"
+            className="text-emerald-100 hover:text-white underline-offset-2 hover:underline text-sm"
           >
             Don't have an account? Register
           </button>
         </div>
+        <div className="pb-3 sm:pb-4 text-center text-white/40 text-xs"></div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
-import { FiUsers, FiInfo, FiSave } from "react-icons/fi";
+import { FiInfo, FiFileText, FiSave, FiArrowLeft } from "react-icons/fi";
 
 const CreateGroup = () => {
   const navigate = useNavigate();
@@ -11,34 +11,38 @@ const CreateGroup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) return toast.error("Group name required");
+    if (!formData.name.trim()) return toast.error("Group name is required");
     setLoading(true);
     try {
-      const res = await api.post("/groups/create", {
-        name: formData.name,
-        description: formData.description,
-      });
-      toast.success(`Group created! Join code: ${res.data.code}`);
-      navigate("/group-select");
+      const res = await api.post("/groups/create", formData);
+      toast.success(`Group "${formData.name}" created!`);
+      localStorage.setItem("selectedGroupId", res.data.groupId);
+      localStorage.setItem("selectedGroupName", formData.name);
+      localStorage.setItem("selectedGroupRole", "admin");
+      navigate("/app/dashboard");
     } catch (error) {
-      console.error("Create group error:", error);
-      const msg = error.response?.data?.message || "Failed to create group";
-      toast.error(msg);
+      toast.error(error.response?.data?.message || "Creation failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10">
-      <div className="card">
-        <h1 className="text-2xl font-bold mb-6">Create New Group</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    // same JSX as before, but navigation buttons use `/group-select`
+    <div className="min-h-screen bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center p-4">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-md border border-white/20">
+        <div className="bg-emerald-700/50 p-4 text-center">
+          <h1 className="text-xl font-bold text-white">Create New Group</h1>
+          <p className="text-emerald-100 text-xs mt-1">
+            Start your own banking circle
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="relative">
-            <FiUsers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <FiInfo className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300" />
             <input
               type="text"
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500"
               placeholder="Group Name *"
               value={formData.name}
               onChange={(e) =>
@@ -48,9 +52,9 @@ const CreateGroup = () => {
             />
           </div>
           <div className="relative">
-            <FiInfo className="absolute left-3 top-3 text-gray-400" />
+            <FiFileText className="absolute left-3 top-3 text-emerald-300" />
             <textarea
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500"
               rows="3"
               placeholder="Description (optional)"
               value={formData.description}
@@ -59,17 +63,26 @@ const CreateGroup = () => {
               }
             />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            <FiSave /> {loading ? "Creating..." : "Create Group"}
-          </button>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg flex items-center justify-center gap-2 text-sm"
+            >
+              <FiSave /> {loading ? "Creating..." : "Create Group"}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/group-select")}
+              className="flex-1 border border-white/30 text-white hover:bg-white/10 py-1.5 rounded-lg flex items-center justify-center gap-2 text-sm"
+            >
+              <FiArrowLeft /> Cancel
+            </button>
+          </div>
         </form>
+        <div className="pb-4 text-center text-white/40 text-xs">v.26.0.1</div>
       </div>
     </div>
   );
 };
-
 export default CreateGroup;

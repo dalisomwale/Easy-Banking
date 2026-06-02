@@ -27,7 +27,7 @@ const MemberDetails = () => {
         setMember(res.data);
       } catch (error) {
         toast.error("Failed to load member");
-        navigate("/members");
+        navigate("/app/members"); // ✅ fixed
       } finally {
         setLoading(false);
       }
@@ -35,10 +35,7 @@ const MemberDetails = () => {
     fetch();
   }, [groupId, id, navigate]);
 
-  const toNumber = (val) => {
-    const num = Number(val);
-    return isNaN(num) ? 0 : num;
-  };
+  const toNumber = (val) => (isNaN(Number(val)) ? 0 : Number(val));
 
   if (loading) return <div className="text-center py-10">Loading...</div>;
   if (!member) return null;
@@ -46,34 +43,36 @@ const MemberDetails = () => {
   return (
     <div className="max-w-4xl mx-auto px-2 space-y-5">
       <button
-        onClick={() => navigate("/members")}
+        onClick={() => navigate("/app/members")} // ✅ fixed
         className="flex items-center gap-2 text-emerald-600 hover:text-emerald-800 transition"
       >
         <FiArrowLeft /> Back to Members
       </button>
-
-      {/* Profile Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-gray-800">
             {member.fullname}
           </h1>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="flex items-center gap-3 text-gray-600">
+            <div className="flex items-center gap-3">
               <FiPhone className="text-emerald-600" /> {member.phone}
             </div>
-            <div className="flex items-center gap-3 text-gray-600">
+            <div className="flex items-center gap-3">
               <FiCalendar className="text-emerald-600" /> Joined:{" "}
               {new Date(member.join_date).toLocaleDateString()}
             </div>
             {member.address && (
-              <div className="flex items-center gap-3 text-gray-600">
+              <div className="flex items-center gap-3">
                 <FiMapPin className="text-emerald-600" /> {member.address}
               </div>
             )}
             <div>
               <span
-                className={`px-3 py-1 text-xs rounded-full ${member.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}
+                className={`inline-flex px-3 py-1 text-xs rounded-full ${
+                  member.status === "active"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-amber-100 text-amber-800"
+                }`}
               >
                 {member.status}
               </span>
@@ -81,30 +80,25 @@ const MemberDetails = () => {
           </div>
         </div>
       </div>
-
-      {/* Savings & Loans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Savings Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-emerald-100 rounded-lg">
-                <FiDollarSign className="text-emerald-700" size={20} />
+                <FiDollarSign className="text-emerald-700" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">Savings</h2>
+              <h2 className="text-lg font-semibold">Savings</h2>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between border-b border-gray-100 pb-2">
-                <span className="text-gray-600">Total Savings:</span>
+              <div className="flex justify-between border-b pb-2">
+                <span>Total Savings:</span>
                 <span className="font-semibold text-emerald-700">
                   K{toNumber(member.total_savings).toFixed(2)}
                 </span>
               </div>
               {member.savings_history?.slice(0, 3).map((s) => (
                 <div key={s.id} className="flex justify-between text-sm">
-                  <span className="text-gray-500">
-                    {new Date(s.date).toLocaleDateString()}
-                  </span>
+                  <span>{new Date(s.date).toLocaleDateString()}</span>
                   <span className="text-emerald-600">
                     +K{toNumber(s.amount).toFixed(2)}
                   </span>
@@ -118,33 +112,26 @@ const MemberDetails = () => {
             </div>
           </div>
         </div>
-
-        {/* Loans Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <FiBookOpen className="text-amber-700" size={20} />
+                <FiBookOpen className="text-amber-700" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                Active Loans
-              </h2>
+              <h2 className="text-lg font-semibold">Active Loans</h2>
             </div>
             {member.active_loans?.length ? (
               <div className="space-y-3">
                 {member.active_loans.map((loan) => (
-                  <div
-                    key={loan.id}
-                    className="border-b border-gray-100 pb-3 last:border-0"
-                  >
+                  <div key={loan.id} className="border-b pb-3 last:border-0">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Amount:</span>
+                      <span>Amount:</span>
                       <span className="font-medium">
                         K{toNumber(loan.amount).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Remaining:</span>
+                      <span>Remaining:</span>
                       <span className="font-medium text-amber-600">
                         K{toNumber(loan.remaining).toFixed(2)}
                       </span>
@@ -156,7 +143,7 @@ const MemberDetails = () => {
                       {role === "member" && (
                         <button
                           onClick={() =>
-                            navigate(`/loans/${loan.id}/repayment`)
+                            navigate(`/app/loans/${loan.id}/repayment`)
                           }
                           className="text-emerald-600 hover:text-emerald-800 text-xs flex items-center gap-1"
                         >
@@ -173,23 +160,21 @@ const MemberDetails = () => {
           </div>
         </div>
       </div>
-
-      {/* Action Buttons - hidden for admin */}
       {role !== "admin" && (
         <div className="flex gap-3">
           <button
             onClick={() =>
-              navigate("/savings/add", { state: { memberId: member.id } })
+              navigate("/app/savings/add", { state: { memberId: member.id } })
             }
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg flex items-center justify-center gap-2 transition"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg flex items-center justify-center gap-2"
           >
             <FiDollarSign /> Add Saving
           </button>
           <button
             onClick={() =>
-              navigate("/loans/request", { state: { memberId: member.id } })
+              navigate("/app/loans/request", { state: { memberId: member.id } })
             }
-            className="flex-1 border border-emerald-300 text-emerald-700 hover:bg-emerald-50 py-2 rounded-lg flex items-center justify-center gap-2 transition"
+            className="flex-1 border border-emerald-300 text-emerald-700 hover:bg-emerald-50 py-2 rounded-lg flex items-center justify-center gap-2"
           >
             <FiBookOpen /> Request Loan
           </button>

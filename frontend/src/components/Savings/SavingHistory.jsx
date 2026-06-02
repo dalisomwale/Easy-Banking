@@ -15,19 +15,16 @@ const SavingHistory = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch savings
         const savingsRes = await api.get(
           `/savings/member/${groupId}/${memberId}`,
         );
         setData(savingsRes.data);
-
-        // Optionally fetch member name (if needed)
         try {
           const membersRes = await api.get(`/members/${groupId}`);
           const member = membersRes.data.find((m) => m.id == memberId);
           if (member) setMemberName(member.fullname);
         } catch (e) {
-          console.error("Could not fetch member name");
+          console.error(e);
         }
       } catch (error) {
         toast.error("Failed to load savings");
@@ -38,12 +35,8 @@ const SavingHistory = () => {
     fetchData();
   }, [groupId, memberId]);
 
-  const toNumber = (val) => {
-    const num = Number(val);
-    return isNaN(num) ? 0 : num;
-  };
-
-  const formatMoney = (value) => `K${value.toFixed(2)}`;
+  const toNumber = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+  const formatMoney = (val) => `K${val.toFixed(2)}`;
 
   if (loading) return <div className="text-center py-10">Loading...</div>;
 
@@ -93,7 +86,7 @@ const SavingHistory = () => {
                       {new Date(s.date).toLocaleDateString()}
                     </p>
                     {s.notes && (
-                      <p className="text-xs text-gray-400 mt-0.5">{s.notes}</p>
+                      <p className="text-xs text-amber-600">{s.notes}</p>
                     )}
                   </div>
                 </div>
@@ -105,5 +98,4 @@ const SavingHistory = () => {
     </div>
   );
 };
-
 export default SavingHistory;

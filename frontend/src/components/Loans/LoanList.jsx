@@ -64,7 +64,6 @@ const LoanList = () => {
       const res = await api.get(`/loans/active/${groupId}`);
       setLoans(res.data);
     } catch (err) {
-      console.error(err);
       setError(
         `Failed to load loans: ${err.response?.data?.message || err.message}`,
       );
@@ -80,7 +79,6 @@ const LoanList = () => {
       );
       setLoans(res.data);
     } catch (err) {
-      console.error(err);
       const errorMsg = err.response?.data?.message || err.message;
       setError(`Failed to load your loans: ${errorMsg}`);
       toast.error(errorMsg);
@@ -89,18 +87,8 @@ const LoanList = () => {
     }
   };
 
-  const toNumber = (val) => {
-    const num = Number(val);
-    return isNaN(num) ? 0 : num;
-  };
-
-  const getProgress = (paid, total) => {
-    const paidNum = toNumber(paid);
-    const totalNum = toNumber(total);
-    if (totalNum === 0) return 0;
-    return (paidNum / totalNum) * 100;
-  };
-
+  const toNumber = (val) => (isNaN(Number(val)) ? 0 : Number(val));
+  const getProgress = (paid, total) => (total === 0 ? 0 : (paid / total) * 100);
   const totalOutstanding = loans.reduce(
     (sum, loan) => sum + toNumber(loan.remaining),
     0,
@@ -112,20 +100,20 @@ const LoanList = () => {
 
   return (
     <div className="space-y-6">
-      {/* Admin header with title and Pending Loans button */}
-      {role === "admin" && (
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Loans</h1>
+      {/* Header - always show title, and pending button only for admin */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">Loans</h1>
+        {role === "admin" && (
           <button
-            onClick={() => navigate("/loans/pending")}
-            className="btn-secondary flex items-center gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            onClick={() => navigate("/app/loans/pending")}
+            className="bg-amber-100 hover:bg-amber-200 text-amber-700 px-4 py-2 rounded-lg flex items-center gap-2 transition"
           >
             <FiClock /> Pending Loans
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Member: Total Outstanding Balance Card (no main heading) */}
+      {/* Member total outstanding card */}
       {role === "member" && (
         <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-5 border border-emerald-200 shadow-sm">
           <div className="flex justify-between items-center">
@@ -153,7 +141,7 @@ const LoanList = () => {
           <h2 className="text-xl font-semibold text-gray-800">Active Loans</h2>
           {role === "member" && (
             <button
-              onClick={() => navigate("/loans/request")}
+              onClick={() => navigate("/app/loans/request")}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
             >
               <FiPlus /> Request Loan
@@ -167,27 +155,15 @@ const LoanList = () => {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-gray-600">Member</th>
-                  <th className="px-4 py-3 text-left text-gray-600">Phone</th>
-                  <th className="px-4 py-3 text-right text-gray-600">
-                    Principal
-                  </th>
-                  <th className="px-4 py-3 text-right text-gray-600">
-                    Total Due
-                  </th>
-                  <th className="px-4 py-3 text-right text-gray-600">Paid</th>
-                  <th className="px-4 py-3 text-right text-gray-600">
-                    Remaining
-                  </th>
-                  <th className="px-4 py-3 text-center text-gray-600">
-                    Progress
-                  </th>
-                  <th className="px-4 py-3 text-center text-gray-600">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-center text-gray-600">
-                    Actions
-                  </th>
+                  <th className="px-4 py-3 text-left">Member</th>
+                  <th className="px-4 py-3 text-left">Phone</th>
+                  <th className="px-4 py-3 text-right">Principal</th>
+                  <th className="px-4 py-3 text-right">Total Due</th>
+                  <th className="px-4 py-3 text-right">Paid</th>
+                  <th className="px-4 py-3 text-right">Remaining</th>
+                  <th className="px-4 py-3 text-center">Progress</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -199,10 +175,8 @@ const LoanList = () => {
                   const overdue = new Date(loan.due_date) < new Date();
                   return (
                     <tr key={loan.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-800">
-                        {loan.fullname}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{loan.phone}</td>
+                      <td className="px-4 py-3 font-medium">{loan.fullname}</td>
+                      <td className="px-4 py-3">{loan.phone}</td>
                       <td className="px-4 py-3 text-right">
                         K{toNumber(loan.amount).toFixed(2)}
                       </td>
@@ -241,8 +215,8 @@ const LoanList = () => {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
-                          onClick={() => navigate(`/loans/${loan.id}`)}
-                          className="text-emerald-600 hover:text-emerald-800 transition"
+                          onClick={() => navigate(`/app/loans/${loan.id}`)}
+                          className="text-emerald-600 hover:text-emerald-800"
                           title="View Details"
                         >
                           <FiEye size={18} />
@@ -255,7 +229,6 @@ const LoanList = () => {
             </table>
           </div>
         ) : (
-          // Member card view – Details button removed, only Make Payment remains
           <div className="p-5 space-y-4">
             {loans.map((loan) => {
               const paid = toNumber(loan.paid_amount);
@@ -280,26 +253,22 @@ const LoanList = () => {
                   </div>
                   <div className="space-y-2 mt-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Loan Amount:</span>
-                      <span className="font-medium">
-                        K{toNumber(loan.amount).toLocaleString()}
-                      </span>
+                      <span>Loan Amount:</span>
+                      <span>K{toNumber(loan.amount).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Total Due:</span>
-                      <span className="font-medium">
-                        K{totalDue.toFixed(2)}
-                      </span>
+                      <span>Total Due:</span>
+                      <span>K{totalDue.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Paid:</span>
-                      <span className="font-medium text-emerald-600">
+                      <span>Paid:</span>
+                      <span className="text-emerald-600">
                         K{paid.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Remaining:</span>
-                      <span className="font-medium text-amber-600">
+                      <span>Remaining:</span>
+                      <span className="text-amber-600">
                         K{remaining.toFixed(2)}
                       </span>
                     </div>
@@ -315,11 +284,12 @@ const LoanList = () => {
                       </p>
                     </div>
                   </div>
-                  {/* Only Make Payment button – Details removed */}
                   <div className="mt-4">
                     <button
-                      onClick={() => navigate(`/loans/${loan.id}/repayment`)}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg flex items-center justify-center gap-1 transition"
+                      onClick={() =>
+                        navigate(`/app/loans/${loan.id}/repayment`)
+                      }
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg flex items-center justify-center gap-1"
                     >
                       <FiTrendingUp size={16} /> Make Payment
                     </button>

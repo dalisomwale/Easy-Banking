@@ -9,6 +9,7 @@ import {
   FiLogOut,
   FiUsers as FiGroup,
 } from "react-icons/fi";
+import Logo from "../Logo";
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -37,43 +38,51 @@ const Layout = () => {
 
   const handleSwitchGroup = () => navigate("/group-select");
 
-  const allNavItems = [
-    { path: "/", label: "Dashboard", icon: FiHome },
-    { path: "/members", label: "Members", icon: FiUsers },
-    { path: "/savings/add", label: "Add Saving", icon: FiDollarSign },
-    { path: "/loans", label: "Loans", icon: FiBookOpen },
+  // Define nav items based on role
+  let navItems = [
+    { path: "/app/dashboard", label: "Dashboard", icon: FiHome },
+    { path: "/app/members", label: "Members", icon: FiUsers },
   ];
-  const adminNavItems = [
-    { path: "/reports", label: "Reports", icon: FiBarChart2 },
-  ];
-  const navItems = isAdmin ? [...allNavItems, ...adminNavItems] : allNavItems;
+
+  if (isAdmin) {
+    // Admin: Add "All Savings", "Loans", and "Reports" – no "Add Saving"
+    navItems.push(
+      { path: "/app/savings/all", label: "All Savings", icon: FiDollarSign },
+      { path: "/app/loans", label: "Loans", icon: FiBookOpen },
+      { path: "/app/reports", label: "Reports", icon: FiBarChart2 },
+    );
+  } else {
+    // Member: Add "Add Saving" and "Loans" – no "All Savings"
+    navItems.push(
+      { path: "/app/savings/add", label: "Add Saving", icon: FiDollarSign },
+      { path: "/app/loans", label: "Loans", icon: FiBookOpen },
+    );
+  }
 
   // Mobile layout
   if (isMobile) {
     return (
       <div className="min-h-screen bg-gray-50 pb-20">
-        <header className="bg-emerald-600 text-white sticky top-0 z-10 shadow-lg">
-          <div className="flex justify-between items-center px-4 py-4">
-            <div>
-              <h1 className="text-xl font-bold">Easy Banking</h1>
-              <p className="text-xs text-emerald-100">
-                {groupName} • {groupRole}
-              </p>
-            </div>
+        <header className="bg-emerald-700 text-white sticky top-0 z-10 shadow-lg">
+          <div className="flex justify-between items-center px-4 py-3">
+            <Logo size="small" showText={true} />
             <div className="flex gap-2">
               <button
                 onClick={handleSwitchGroup}
-                className="p-2 hover:bg-emerald-700 rounded-lg transition"
+                className="p-2 hover:bg-emerald-600 rounded-lg"
               >
                 <FiGroup size={20} />
               </button>
               <button
                 onClick={handleLogout}
-                className="p-2 hover:bg-emerald-700 rounded-lg transition"
+                className="p-2 hover:bg-red-600 rounded-lg"
               >
                 <FiLogOut size={20} />
               </button>
             </div>
+          </div>
+          <div className="px-4 pb-2 text-xs text-emerald-100">
+            {groupName} • {groupRole}
           </div>
         </header>
         <main className="pb-4">
@@ -82,12 +91,7 @@ const Layout = () => {
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 shadow-lg z-10">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              location.pathname === item.path ||
-              (item.path === "/members" &&
-                location.pathname.startsWith("/members/")) ||
-              (item.path === "/loans" &&
-                location.pathname.startsWith("/loans/"));
+            const isActive = location.pathname === item.path;
             return (
               <button
                 key={item.path}
@@ -110,9 +114,9 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <aside className="fixed left-0 top-0 h-full w-64 bg-emerald-800 text-white flex flex-col z-20 shadow-xl">
-        <div className="p-6 border-b border-emerald-700">
-          <h2 className="text-2xl font-bold">Easy Banking</h2>
-          <p className="text-sm text-emerald-200 mt-1">
+        <div className="p-5 border-b border-emerald-700">
+          <Logo size="default" showText={true} />
+          <p className="text-xs text-emerald-200 mt-2">
             {groupName} • {groupRole}
           </p>
         </div>
@@ -136,25 +140,28 @@ const Layout = () => {
             );
           })}
         </nav>
-        <div className="p-6 border-t border-emerald-700">
+        <div className="p-5 border-t border-emerald-700">
           <div className="mb-4">
             <p className="text-sm font-medium">{user.name}</p>
             <p className="text-xs text-emerald-200">{user.email}</p>
           </div>
           <button
             onClick={handleSwitchGroup}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-700 rounded-lg hover:bg-emerald-600 transition mb-2"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg transition mb-2"
           >
             <FiGroup />
             <span>Switch Group</span>
           </button>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-700 rounded-lg hover:bg-emerald-600 transition"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition"
           >
             <FiLogOut />
             <span>Logout</span>
           </button>
+          <div className="text-center text-xs text-emerald-400 mt-4">
+            v.26.0.1
+          </div>
         </div>
       </aside>
       <div className="flex-1 ml-64">

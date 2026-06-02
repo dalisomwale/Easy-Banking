@@ -53,18 +53,80 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-primary-600 p-6 text-center">
-          <h1 className="text-3xl font-bold text-white">Easy Banking</h1>
-          <p className="text-primary-100">Create Account</p>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center p-4">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md overflow-hidden border border-white/20">
+        <div className="bg-emerald-700/50 p-4 sm:p-5 text-center">
+          <div className="flex justify-center mb-1 sm:mb-2">
+            <div className="bg-white/10 p-1.5 sm:p-2 rounded-lg">
+              <svg
+                width={32}
+                height={32}
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-white sm:w-11 sm:h-11"
+              >
+                <path
+                  d="M4 9.5L12 4L20 9.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <rect
+                  x="6"
+                  y="9.5"
+                  width="12"
+                  height="12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+                <line
+                  x1="9"
+                  y1="12"
+                  x2="9"
+                  y2="21.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+                <line
+                  x1="12"
+                  y1="12"
+                  x2="12"
+                  y2="21.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+                <line
+                  x1="15"
+                  y1="12"
+                  x2="15"
+                  y2="21.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-lg sm:text-xl font-bold text-white">
+            Easy Banking
+          </h1>
+          <p className="text-emerald-100 text-xs">Create Account</p>
         </div>
-        <form onSubmit={handleSubmit} className="p-8 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="p-4 sm:p-6 space-y-3 sm:space-y-4"
+        >
           <div className="relative">
-            <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <FiUser
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+              size={14}
+            />
             <input
               type="text"
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Full Name"
               value={formData.name}
               onChange={(e) =>
@@ -74,10 +136,13 @@ const Register = () => {
             />
           </div>
           <div className="relative">
-            <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <FiMail
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+              size={14}
+            />
             <input
               type="email"
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Email"
               value={formData.email}
               onChange={(e) =>
@@ -87,10 +152,13 @@ const Register = () => {
             />
           </div>
           <div className="relative">
-            <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <FiPhone
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+              size={14}
+            />
             <input
               type="tel"
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Phone Number"
               value={formData.phone}
               onChange={(e) =>
@@ -100,10 +168,13 @@ const Register = () => {
             />
           </div>
           <div className="relative">
-            <FiFileText className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <FiFileText
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+              size={14}
+            />
             <input
               type="text"
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="NRC/ID Number"
               value={formData.nrc}
               onChange={(e) =>
@@ -113,9 +184,12 @@ const Register = () => {
             />
           </div>
           <div className="relative">
-            <FiMapPin className="absolute left-3 top-3 text-gray-400" />
+            <FiMapPin
+              className="absolute left-3 top-3 text-emerald-300"
+              size={14}
+            />
             <textarea
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
               rows="2"
               placeholder="Address"
               value={formData.address}
@@ -125,10 +199,13 @@ const Register = () => {
             />
           </div>
           <div className="relative">
-            <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <FiLock
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+              size={14}
+            />
             <input
               type="password"
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Password"
               value={formData.password}
               onChange={(e) =>
@@ -138,10 +215,13 @@ const Register = () => {
             />
           </div>
           <div className="relative">
-            <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <FiLock
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+              size={14}
+            />
             <input
               type="password"
-              className="input-field pl-10"
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChange={(e) =>
@@ -153,19 +233,20 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg flex items-center justify-center gap-2 transition text-sm"
           >
-            <FiUserPlus /> {loading ? "Registering..." : "Register"}
+            <FiUserPlus size={14} /> {loading ? "Registering..." : "Register"}
           </button>
         </form>
-        <div className="pb-8 text-center">
+        <div className="pb-5 sm:pb-8 text-center">
           <button
             onClick={() => navigate("/login")}
-            className="text-primary-600 hover:underline"
+            className="text-emerald-100 hover:text-white underline-offset-2 hover:underline text-sm"
           >
             Already have an account? Login
           </button>
         </div>
+        <div className="pb-3 sm:pb-4 text-center text-white/40 text-xs"></div>
       </div>
     </div>
   );

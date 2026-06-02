@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import GroupSelect from "./pages/GroupSelect";
@@ -24,8 +25,9 @@ import LoanDetails from "./components/Loans/LoanDetails";
 import RepaymentForm from "./components/Loans/RepaymentForm";
 import Reports from "./components/Reports/Reports";
 import LoanRequestForm from "./components/Loans/LoanRequestForm";
-import PendingLoans from "./components/Loans/PendingLoans"; // NEW
+import PendingLoans from "./components/Loans/PendingLoans";
 import AllSavings from "./components/Savings/AllSavings";
+import SplashScreen from "./components/SplashScreen";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -33,12 +35,62 @@ const PrivateRoute = ({ children }) => {
 };
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const splashShown = sessionStorage.getItem("splashShown");
+    if (!splashShown) {
+      setShowSplash(true);
+      sessionStorage.setItem("splashShown", "true");
+    } else {
+      setShowSplash(false);
+    }
+  }, []);
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
       <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* Protected routes (require authentication) */}
+        <Route
+          path="/app"
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<Navigate to="/app/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="members" element={<MemberList />} />
+          <Route path="members/new" element={<MemberForm />} />{" "}
+          {/* ✅ Add new member form */}
+          <Route path="members/invite" element={<InviteMember />} />{" "}
+          {/* Optional: email invite */}
+          <Route path="members/edit/:id" element={<MemberForm />} />
+          <Route path="members/:id" element={<MemberDetails />} />
+          <Route path="savings/add" element={<SavingForm />} />
+          <Route path="savings/all" element={<AllSavings />} />
+          <Route path="savings/history/:memberId" element={<SavingHistory />} />
+          <Route path="loans" element={<LoanList />} />
+          <Route path="loans/pending" element={<PendingLoans />} />{" "}
+          {/* ✅ Pending loans route */}
+          <Route path="loans/request" element={<LoanRequestForm />} />
+          <Route path="loans/:id" element={<LoanDetails />} />
+          <Route path="loans/:id/repayment" element={<RepaymentForm />} />
+          <Route path="reports" element={<Reports />} />
+        </Route>
+
+        {/* Group selection routes – also protected but share same auth */}
         <Route
           path="/group-select"
           element={
@@ -63,29 +115,9 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="members" element={<MemberList />} />
-          <Route path="members/add" element={<InviteMember />} />
-          <Route path="members/edit/:id" element={<MemberForm />} />
-          <Route path="members/:id" element={<MemberDetails />} />
-          <Route path="savings/add" element={<SavingForm />} />
-          <Route path="savings/history/:memberId" element={<SavingHistory />} />
-          <Route path="loans" element={<LoanList />} />
-          <Route path="loans/pending" element={<PendingLoans />} /> {/* NEW */}
-          <Route path="loans/:id" element={<LoanDetails />} />
-          <Route path="loans/request" element={<LoanRequestForm />} />
-          <Route path="loans/:id/repayment" element={<RepaymentForm />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="savings/all" element={<AllSavings />} />
-        </Route>
+
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

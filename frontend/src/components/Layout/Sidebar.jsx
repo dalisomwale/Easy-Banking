@@ -41,7 +41,6 @@ const Sidebar = ({ admin }) => {
           {groupName} • {groupRole}
         </p>
       </div>
-
       <nav className="flex-1 py-6">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -62,7 +61,6 @@ const Sidebar = ({ admin }) => {
           );
         })}
       </nav>
-
       <div className="p-6 border-t border-emerald-700">
         <div className="mb-4">
           <p className="text-sm font-medium">{admin?.name || "User"}</p>
@@ -70,14 +68,14 @@ const Sidebar = ({ admin }) => {
         </div>
         <button
           onClick={handleSwitchGroup}
-          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-700 rounded-lg hover:bg-emerald-600 transition mb-2"
+          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-700 rounded-lg hover:bg-amber-600 transition mb-2"
         >
           <FiLogOut className="rotate-90" />
           <span>Switch Group</span>
         </button>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-700 rounded-lg hover:bg-emerald-600 transition"
+          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-700 rounded-lg hover:bg-red-600 transition"
         >
           <FiLogOut />
           <span>Logout</span>

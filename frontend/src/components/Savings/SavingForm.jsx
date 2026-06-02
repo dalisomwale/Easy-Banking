@@ -32,7 +32,6 @@ const SavingForm = () => {
   const [totalSavings, setTotalSavings] = useState(0);
   const [fetchingData, setFetchingData] = useState(false);
 
-  // For members: if storedMemberId is missing, try to fetch it from the backend
   useEffect(() => {
     if (role === "member" && !storedMemberId && groupId) {
       const fetchMemberId = async () => {
@@ -42,7 +41,7 @@ const SavingForm = () => {
           localStorage.setItem("member_id", newMemberId);
           setFormData((prev) => ({ ...prev, member_id: newMemberId }));
         } catch (error) {
-          console.error("Failed to fetch member ID:", error);
+          console.error(error);
           toast.error(
             "Unable to identify your member profile. Please contact admin.",
           );
@@ -52,7 +51,6 @@ const SavingForm = () => {
     }
   }, [role, storedMemberId, groupId]);
 
-  // Fetch members for admin
   useEffect(() => {
     if (role === "admin" && groupId) {
       const fetchMembers = async () => {
@@ -67,7 +65,6 @@ const SavingForm = () => {
     }
   }, [groupId, role]);
 
-  // Fetch savings data when member_id is available
   const fetchSavingsData = async (memberId) => {
     if (!memberId || !groupId) return;
     setFetchingData(true);
@@ -76,7 +73,7 @@ const SavingForm = () => {
       setRecentSavings(res.data.savings.slice(0, 5));
       setTotalSavings(res.data.total_savings || 0);
     } catch (error) {
-      console.error("Failed to fetch savings:", error);
+      console.error(error);
       setRecentSavings([]);
       setTotalSavings(0);
     } finally {
@@ -85,26 +82,22 @@ const SavingForm = () => {
   };
 
   useEffect(() => {
-    if (formData.member_id) {
-      fetchSavingsData(formData.member_id);
-    } else {
+    if (formData.member_id) fetchSavingsData(formData.member_id);
+    else {
       setRecentSavings([]);
       setTotalSavings(0);
     }
   }, [formData.member_id, groupId]);
 
-  const handleMemberChange = (e) => {
-    const newMemberId = e.target.value;
-    setFormData({ ...formData, member_id: newMemberId });
-  };
-
+  const handleMemberChange = (e) =>
+    setFormData({ ...formData, member_id: e.target.value });
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.member_id) {
       toast.error(
         role === "admin"
           ? "Please select a member"
-          : "Member ID not found. Please contact admin.",
+          : "Member ID not found. Contact admin.",
       );
       return;
     }
@@ -119,7 +112,6 @@ const SavingForm = () => {
       await fetchSavingsData(formData.member_id);
       setFormData({ ...formData, amount: "", notes: "" });
     } catch (error) {
-      console.error(error);
       toast.error("Failed to record saving");
     } finally {
       setLoading(false);
@@ -127,15 +119,12 @@ const SavingForm = () => {
   };
 
   const isMemberSelected = !!formData.member_id;
-
   const formatMoney = (value) =>
     `K${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="max-w-4xl mx-auto px-2">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Record Saving</h1>
-
-      {/* Total Savings Card */}
       {isMemberSelected && !fetchingData && (
         <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-5 mb-6 border border-emerald-200 shadow-sm">
           <div className="flex items-center justify-between">
@@ -158,9 +147,7 @@ const SavingForm = () => {
           </div>
         </div>
       )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left column: Form */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-5">
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -197,7 +184,7 @@ const SavingForm = () => {
                 />
               </div>
               <div className="relative">
-                <FiCreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+                <FiCreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <select
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
                   value={formData.payment_method}
@@ -211,7 +198,7 @@ const SavingForm = () => {
                 </select>
               </div>
               <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="date"
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
@@ -250,8 +237,6 @@ const SavingForm = () => {
             </form>
           </div>
         </div>
-
-        {/* Right column: Recent Savings */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-5">
             <div className="flex justify-between items-center mb-4">
@@ -261,7 +246,7 @@ const SavingForm = () => {
               {isMemberSelected && !fetchingData && (
                 <button
                   onClick={() => fetchSavingsData(formData.member_id)}
-                  className="text-emerald-600 hover:text-emerald-700 transition"
+                  className="text-emerald-600 hover:text-emerald-700"
                 >
                   <FiRefreshCw size={18} />
                 </button>
@@ -294,7 +279,7 @@ const SavingForm = () => {
                           {new Date(saving.date).toLocaleDateString()}
                         </p>
                         {saving.notes && (
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-amber-600">
                             {saving.notes}
                           </p>
                         )}
@@ -315,5 +300,4 @@ const SavingForm = () => {
     </div>
   );
 };
-
 export default SavingForm;
