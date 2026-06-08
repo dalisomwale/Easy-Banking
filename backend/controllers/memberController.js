@@ -1,16 +1,16 @@
 const db = require("../config/database");
 
-// Get all members for a group
+// Get all members for a group – simple & reliable (assumes members table has all records)
 const getMembers = async (req, res) => {
   try {
     const { groupId } = req.params;
     const [members] = await db.query(
       `SELECT m.*, COALESCE(SUM(s.amount), 0) as total_savings 
-             FROM members m 
-             LEFT JOIN savings s ON m.id = s.member_id AND s.group_id = ? 
-             WHERE m.group_id = ? 
-             GROUP BY m.id 
-             ORDER BY m.created_at DESC`,
+       FROM members m 
+       LEFT JOIN savings s ON m.id = s.member_id AND s.group_id = ? 
+       WHERE m.group_id = ? 
+       GROUP BY m.id 
+       ORDER BY m.created_at DESC`,
       [groupId, groupId],
     );
     res.json(members);
@@ -72,11 +72,9 @@ const createMember = async (req, res) => {
       [nrc, groupId],
     );
     if (existing.length > 0) {
-      return res
-        .status(400)
-        .json({
-          message: "A member with this NRC already exists in the group",
-        });
+      return res.status(400).json({
+        message: "A member with this NRC already exists in the group",
+      });
     }
 
     const [result] = await db.query(
@@ -149,6 +147,7 @@ const deleteMember = async (req, res) => {
 };
 
 // Invite a user by email to become a member (admin only)
+// FIXED: Creates missing members row instead of error when only user_groups exists
 const inviteMember = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -157,56 +156,61 @@ const inviteMember = async (req, res) => {
 
     if (!email) return res.status(400).json({ message: "Email is required" });
 
+    // 1. Find user by email
     const [users] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
     if (users.length === 0) {
-      return res
-        .status(404)
-        .json({
-          message: "User not found. Please ask them to register first.",
-        });
+      return res.status(404).json({
+        message: "User not found. Please ask them to register first.",
+      });
     }
     const userId = users[0].id;
 
+    // 2. Ensure user is in user_groups for this group
     const [existingGroup] = await db.query(
       "SELECT * FROM user_groups WHERE user_id = ? AND group_id = ?",
       [userId, groupId],
     );
-    if (existingGroup.length > 0) {
-      return res
-        .status(400)
-        .json({ message: "User is already a member of this group" });
+
+    if (existingGroup.length === 0) {
+      await db.query(
+        "INSERT INTO user_groups (user_id, group_id, role) VALUES (?, ?, ?)",
+        [userId, groupId, "member"],
+      );
     }
 
-    await db.query(
-      "INSERT INTO user_groups (user_id, group_id, role) VALUES (?, ?, ?)",
-      [userId, groupId, "member"],
-    );
-
+    // 3. Check if a members record already exists
     const [memberRec] = await db.query(
       "SELECT * FROM members WHERE user_id = ? AND group_id = ?",
       [userId, groupId],
     );
+
     if (memberRec.length === 0) {
+      // Create missing members record
       const userName = users[0].name;
       const joinDate = new Date().toISOString().split("T")[0];
+      const tempNrc = `temp_${userId}_${Date.now()}`; // unique temporary NRC
       await db.query(
         `INSERT INTO members 
-                 (group_id, fullname, phone, nrc, address, join_date, created_by, user_id, status) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-        [groupId, userName, "", "", "", joinDate, adminId, userId],
+         (group_id, fullname, phone, nrc, address, join_date, created_by, user_id, status) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+        [groupId, userName, "", tempNrc, "", joinDate, adminId, userId],
       );
+      return res.json({ message: "User added as member successfully" });
+    } else {
+      // Both user_groups and members exist → truly duplicate
+      return res
+        .status(400)
+        .json({ message: "User is already a member of this group" });
     }
-
-    res.json({ message: "User added as member successfully" });
   } catch (error) {
     console.error("Invite member error:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// NEW: Get member_id for the logged-in user in a specific group
+// Get member_id for the logged-in user in a specific group
 const getMemberIdByUser = async (req, res) => {
   try {
     const { groupId } = req.params;

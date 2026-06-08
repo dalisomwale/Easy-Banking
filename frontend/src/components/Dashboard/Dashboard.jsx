@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   FiUsers,
   FiDollarSign,
@@ -30,9 +30,13 @@ const Dashboard = () => {
     return isNaN(num) ? 0 : num;
   };
 
+  const formatMoney = (value) => `K${value.toFixed(2)}`;
+
+  // Helper to get member_id if not already stored
   useEffect(() => {
     const fetchMemberId = async () => {
       if (!groupId || role !== "member") return;
+      if (memberId) return;
       try {
         const res = await api.get(`/members/member-id/${groupId}`);
         localStorage.setItem("member_id", res.data.member_id);
@@ -41,61 +45,115 @@ const Dashboard = () => {
         console.error("Failed to fetch member_id:", err);
       }
     };
-    if (role === "member" && !memberId) fetchMemberId();
+    fetchMemberId();
   }, [groupId, role, memberId]);
 
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        const res = await api.get(`/reports/dashboard/${groupId}`);
-        const data = res.data;
-        setStats({
-          total_members: toNumber(data.total_members),
-          total_savings: toNumber(data.total_savings),
-          active_loans_count: toNumber(data.active_loans_count),
-          total_loans_amount: toNumber(data.total_loans_amount),
-          total_repayments: toNumber(data.total_repayments),
-          total_funds: toNumber(data.total_funds),
-          recent_transactions: (data.recent_transactions || []).map((tx) => ({
-            ...tx,
-            amount: toNumber(tx.amount),
-          })),
+  // Admin dashboard data fetch (memoized)
+  const fetchAdminDashboard = useCallback(async () => {
+    const res = await api.get(`/reports/dashboard/${groupId}`);
+    const data = res.data;
+    setStats({
+      total_members: toNumber(data.total_members),
+      total_savings: toNumber(data.total_savings),
+      active_loans_count: toNumber(data.active_loans_count),
+      total_loans_amount: toNumber(data.total_loans_amount),
+      total_repayments: toNumber(data.total_repayments),
+      total_funds: toNumber(data.total_funds),
+      recent_transactions: (data.recent_transactions || []).map((tx) => ({
+        ...tx,
+        amount: toNumber(tx.amount),
+      })),
+    });
+  }, [groupId]);
+
+  // Member dashboard data fetch (memoized)
+  const fetchMemberDashboard = useCallback(async () => {
+    if (!memberId) return;
+
+    // 1. Get member's savings
+    const savingsRes = await api.get(`/savings/member/${groupId}/${memberId}`);
+    const mySavings = savingsRes.data.savings || [];
+    const myTotalSavings = toNumber(savingsRes.data.total_savings);
+
+    // 2. Get member's loan history (includes repayments)
+    const loansRes = await api.get(`/loans/history/${groupId}/${memberId}`);
+    const myLoans = loansRes.data || [];
+
+    // 3. Build recent transactions (savings + repayments)
+    const savingTransactions = mySavings.map((s) => ({
+      member_name: "You",
+      type: "saving",
+      amount: toNumber(s.amount),
+      date: s.date,
+    }));
+
+    const repaymentTransactions = [];
+    myLoans.forEach((loan) => {
+      if (loan.repayments && loan.repayments.length) {
+        loan.repayments.forEach((rep) => {
+          repaymentTransactions.push({
+            member_name: "You",
+            type: "repayment",
+            amount: toNumber(rep.amount_paid),
+            date: rep.payment_date,
+          });
         });
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to load dashboard stats");
       }
-    };
+    });
 
-    const fetchMemberLoanSummary = async () => {
-      if (!groupId || !memberId) return;
-      try {
-        const res = await api.get(`/loans/summary/${groupId}/${memberId}`);
-        setMemberLoanTotal(toNumber(res.data.total_outstanding));
-      } catch (error) {
-        console.error("Failed to load loan summary", error);
-      }
-    };
+    let allTx = [...savingTransactions, ...repaymentTransactions];
+    allTx.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const recentTx = allTx.slice(0, 10);
 
+    // 4. Get member's loan summary (outstanding)
+    const summaryRes = await api.get(`/loans/summary/${groupId}/${memberId}`);
+    const outstanding = toNumber(summaryRes.data.total_outstanding);
+
+    // 5. Group total funds (visible to everyone)
+    const fundsRes = await api.get(`/loans/group/funds/${groupId}`);
+    const totalFunds = toNumber(fundsRes.data.total_funds);
+
+    setMemberLoanTotal(outstanding);
+    setStats({
+      total_members: 0,
+      total_savings: myTotalSavings,
+      active_loans_count: 0,
+      total_loans_amount: 0,
+      total_repayments: 0,
+      total_funds: totalFunds,
+      recent_transactions: recentTx,
+    });
+  }, [groupId, memberId]);
+
+  // Main load effect
+  useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await fetchDashboardStats();
-      if (role === "member" && memberId) await fetchMemberLoanSummary();
-      setLoading(false);
+      try {
+        if (role === "admin") {
+          await fetchAdminDashboard();
+        } else if (role === "member" && memberId) {
+          await fetchMemberDashboard();
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
     };
     if (groupId) loadData();
-  }, [groupId, role, memberId]);
+  }, [groupId, role, memberId, fetchAdminDashboard, fetchMemberDashboard]);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
       </div>
     );
+  }
 
-  const formatMoney = (value) => `K${value.toFixed(2)}`;
-
-  // Admin Dashboard with orange accents
+  // Admin Dashboard (unchanged)
   const AdminDashboard = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -209,7 +267,7 @@ const Dashboard = () => {
     </div>
   );
 
-  // Member Dashboard (unchanged but keep orange for loan)
+  // Member Dashboard – shows personal data only
   const MemberDashboard = () => (
     <div className="space-y-5 max-w-md mx-auto px-2">
       <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 shadow-sm border border-emerald-200">
@@ -233,7 +291,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-xs uppercase tracking-wide">
-                Savings
+                My Savings
               </p>
               <p className="text-xl font-semibold text-emerald-700 mt-1">
                 {formatMoney(stats.total_savings)}
@@ -248,7 +306,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-xs uppercase tracking-wide">
-                Outstanding Loan
+                My Outstanding Loan
               </p>
               <p className="text-xl font-semibold text-amber-600 mt-1">
                 {formatMoney(memberLoanTotal)}
@@ -264,7 +322,7 @@ const Dashboard = () => {
         <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
           <FiActivity className="text-amber-500" size={18} />
           <h2 className="text-lg font-semibold text-gray-700">
-            Recent Activity
+            My Recent Activity
           </h2>
         </div>
         {stats.recent_transactions.length === 0 ? (
@@ -276,17 +334,18 @@ const Dashboard = () => {
             {stats.recent_transactions.map((tx, idx) => (
               <div key={idx} className="flex justify-between items-center">
                 <div>
-                  <p className="font-medium text-gray-800">{tx.member_name}</p>
-                  <p className="text-xs text-gray-400 capitalize">{tx.type}</p>
+                  <p className="font-medium text-gray-800 capitalize">
+                    {tx.type}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(tx.date).toLocaleDateString()}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p
                     className={`font-semibold ${tx.type === "saving" ? "text-emerald-600" : "text-amber-600"}`}
                   >
                     {tx.type === "saving" ? "+" : "-"} {formatMoney(tx.amount)}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(tx.date).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -299,4 +358,5 @@ const Dashboard = () => {
 
   return role === "admin" ? <AdminDashboard /> : <MemberDashboard />;
 };
+
 export default Dashboard;

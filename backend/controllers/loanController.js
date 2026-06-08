@@ -24,7 +24,25 @@ const getGroupTotalFunds = async (groupId) => {
   return totalSavings + totalRepayments;
 };
 
-// Request a loan (member) – now with funds validation
+// Helper: check if user is admin of a group
+const isAdmin = async (userId, groupId) => {
+  const [adminCheck] = await db.query(
+    "SELECT role FROM user_groups WHERE user_id = ? AND group_id = ?",
+    [userId, groupId],
+  );
+  return adminCheck.length > 0 && adminCheck[0].role === "admin";
+};
+
+// Helper: get member_id for a user in a group
+const getMemberId = async (userId, groupId) => {
+  const [member] = await db.query(
+    "SELECT id FROM members WHERE user_id = ? AND group_id = ?",
+    [userId, groupId],
+  );
+  return member.length ? member[0].id : null;
+};
+
+// Request a loan (member) – with funds validation and ownership check
 const requestLoan = async (req, res) => {
   try {
     const {
@@ -36,6 +54,14 @@ const requestLoan = async (req, res) => {
       issue_date,
     } = req.body;
     const userId = req.user.id;
+
+    // Ensure the logged-in user owns this member_id
+    const realMemberId = await getMemberId(userId, groupId);
+    if (!realMemberId || realMemberId != member_id) {
+      return res
+        .status(403)
+        .json({ message: "You can only request loans for yourself" });
+    }
 
     // Validate group funds
     const totalFunds = await getGroupTotalFunds(groupId);
@@ -74,7 +100,7 @@ const requestLoan = async (req, res) => {
   }
 };
 
-// Approve loan (admin)
+// Approve loan (admin only)
 const approveLoan = async (req, res) => {
   try {
     const { loanId } = req.params;
@@ -86,12 +112,9 @@ const approveLoan = async (req, res) => {
     if (!loan.length)
       return res.status(404).json({ message: "Loan not found" });
 
-    const [adminCheck] = await db.query(
-      "SELECT role FROM user_groups WHERE user_id = ? AND group_id = ?",
-      [userId, loan[0].group_id],
-    );
-    if (!adminCheck.length || adminCheck[0].role !== "admin")
+    if (!(await isAdmin(userId, loan[0].group_id))) {
       return res.status(403).json({ message: "Only admins can approve loans" });
+    }
 
     await db.query('UPDATE loans SET status = "active" WHERE id = ?', [loanId]);
     res.json({ message: "Loan approved" });
@@ -101,7 +124,7 @@ const approveLoan = async (req, res) => {
   }
 };
 
-// Reject loan (admin)
+// Reject loan (admin only)
 const rejectLoan = async (req, res) => {
   try {
     const { loanId } = req.params;
@@ -113,12 +136,9 @@ const rejectLoan = async (req, res) => {
     if (!loan.length)
       return res.status(404).json({ message: "Loan not found" });
 
-    const [adminCheck] = await db.query(
-      "SELECT role FROM user_groups WHERE user_id = ? AND group_id = ?",
-      [userId, loan[0].group_id],
-    );
-    if (!adminCheck.length || adminCheck[0].role !== "admin")
+    if (!(await isAdmin(userId, loan[0].group_id))) {
       return res.status(403).json({ message: "Only admins can reject loans" });
+    }
 
     await db.query('UPDATE loans SET status = "rejected" WHERE id = ?', [
       loanId,
@@ -130,10 +150,18 @@ const rejectLoan = async (req, res) => {
   }
 };
 
-// Get active loans for admin (group view)
+// Get active loans for admin (group view) – admin only
 const getActiveLoans = async (req, res) => {
   try {
     const { groupId } = req.params;
+    const userId = req.user.id;
+
+    if (!(await isAdmin(userId, groupId))) {
+      return res
+        .status(403)
+        .json({ message: "Only admins can view all active loans" });
+    }
+
     const [loans] = await db.query(
       `SELECT l.*, m.fullname, m.phone,
               COALESCE(SUM(r.amount_paid), 0) as paid_amount,
@@ -168,11 +196,7 @@ const getPendingLoans = async (req, res) => {
     const { groupId } = req.params;
     const userId = req.user.id;
 
-    const [adminCheck] = await db.query(
-      "SELECT role FROM user_groups WHERE user_id = ? AND group_id = ?",
-      [userId, groupId],
-    );
-    if (!adminCheck.length || adminCheck[0].role !== "admin") {
+    if (!(await isAdmin(userId, groupId))) {
       return res
         .status(403)
         .json({ message: "Only admins can view pending loans" });
@@ -198,20 +222,17 @@ const getPendingLoans = async (req, res) => {
   }
 };
 
-// Get active loans for a specific member (member view)
+// Get active loans for a specific member (member view) – only that member's own loans
 const getActiveLoansForMember = async (req, res) => {
   try {
     const { groupId, member_id } = req.params;
     const userId = req.user.id;
 
-    const [member] = await db.query(
-      "SELECT id FROM members WHERE id = ? AND group_id = ? AND user_id = ?",
-      [member_id, groupId, userId],
-    );
-    if (!member.length) {
+    const realMemberId = await getMemberId(userId, groupId);
+    if (!realMemberId || realMemberId != member_id) {
       return res
         .status(403)
-        .json({ message: "Access denied – member not linked to your account" });
+        .json({ message: "You can only view your own loans" });
     }
 
     const [loans] = await db.query(
@@ -241,10 +262,19 @@ const getActiveLoansForMember = async (req, res) => {
   }
 };
 
-// Get loan summary (total outstanding for a member)
+// Get loan summary for a member (total outstanding) – only own summary
 const getLoanSummary = async (req, res) => {
   try {
     const { groupId, member_id } = req.params;
+    const userId = req.user.id;
+
+    const realMemberId = await getMemberId(userId, groupId);
+    if (!realMemberId || realMemberId != member_id) {
+      return res
+        .status(403)
+        .json({ message: "You can only view your own summary" });
+    }
+
     const [result] = await db.query(
       `SELECT COALESCE(SUM(remaining), 0) as total_outstanding
        FROM (
@@ -265,10 +295,19 @@ const getLoanSummary = async (req, res) => {
   }
 };
 
-// Get loan history for a member
+// Get loan history for a member – only own history
 const getLoanHistory = async (req, res) => {
   try {
     const { groupId, member_id } = req.params;
+    const userId = req.user.id;
+
+    const realMemberId = await getMemberId(userId, groupId);
+    if (!realMemberId || realMemberId != member_id) {
+      return res
+        .status(403)
+        .json({ message: "You can only view your own history" });
+    }
+
     const [loans] = await db.query(
       `SELECT l.*, 
               COALESCE(SUM(r.amount_paid), 0) as paid_amount,
@@ -296,7 +335,7 @@ const getLoanHistory = async (req, res) => {
   }
 };
 
-// Record a repayment (includes interest validation)
+// Record a repayment – members can only repay their own loans; admins can repay any
 const recordRepayment = async (req, res) => {
   try {
     const { loan_id, amount_paid, payment_date, payment_method } = req.body;
@@ -313,8 +352,15 @@ const recordRepayment = async (req, res) => {
         [loan_id],
       );
       if (loan.length === 0) throw new Error("Loan not found");
-
       const loanData = loan[0];
+
+      // Check permission: user must be admin or the member who owns the loan
+      const isAdminUser = await isAdmin(userId, loanData.group_id);
+      const memberId = await getMemberId(userId, loanData.group_id);
+      if (!isAdminUser && memberId !== loanData.member_id) {
+        throw new Error("You can only repay your own loans");
+      }
+
       const principal = toNumber(loanData.amount);
       const interestRate = toNumber(loanData.interest_rate);
       const totalAmount = principal + (principal * interestRate) / 100;
@@ -357,23 +403,31 @@ const recordRepayment = async (req, res) => {
   }
 };
 
-// Get full loan details including repayments
+// Get full loan details including repayments – accessible to member (own loan) or admin
 const getLoanDetails = async (req, res) => {
   try {
     const { groupId, id } = req.params;
-    const [loans] = await db.query(
+    const userId = req.user.id;
+
+    const [loan] = await db.query(
       `SELECT l.*, m.fullname, m.phone, m.nrc
        FROM loans l
        JOIN members m ON l.member_id = m.id
        WHERE l.id = ? AND l.group_id = ?`,
       [id, groupId],
     );
-    if (loans.length === 0)
+    if (loan.length === 0)
       return res.status(404).json({ message: "Loan not found" });
+    const loanData = loan[0];
 
-    const loan = loans[0];
-    const amount = toNumber(loan.amount);
-    const interestRate = toNumber(loan.interest_rate);
+    const isAdminUser = await isAdmin(userId, groupId);
+    const memberId = await getMemberId(userId, groupId);
+    if (!isAdminUser && memberId !== loanData.member_id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const amount = toNumber(loanData.amount);
+    const interestRate = toNumber(loanData.interest_rate);
     const totalAmount = amount + (amount * interestRate) / 100;
 
     const [repayments] = await db.query(
@@ -387,7 +441,7 @@ const getLoanDetails = async (req, res) => {
     const remaining = totalAmount - totalPaid;
 
     res.json({
-      ...loan,
+      ...loanData,
       amount,
       interest_rate: interestRate,
       total_amount: totalAmount,
@@ -404,7 +458,7 @@ const getLoanDetails = async (req, res) => {
   }
 };
 
-// NEW: Get total funds for a group (used by dashboard and loan validation)
+// Get total funds for a group (visible to all members)
 const getGroupFunds = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -412,6 +466,27 @@ const getGroupFunds = async (req, res) => {
     res.json({ total_funds: totalFunds });
   } catch (error) {
     console.error("getGroupFunds error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get group loan totals (total active loans, total loaned amount) – visible to all
+const getGroupLoanTotals = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const [result] = await db.query(
+      `SELECT 
+         COALESCE(SUM(amount), 0) as total_loaned,
+         COALESCE(SUM(CASE WHEN status = 'active' THEN amount END), 0) as active_loans
+       FROM loans WHERE group_id = ?`,
+      [groupId],
+    );
+    res.json({
+      total_loaned: toNumber(result[0]?.total_loaned || 0),
+      active_loans: toNumber(result[0]?.active_loans || 0),
+    });
+  } catch (error) {
+    console.error("getGroupLoanTotals error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -427,5 +502,6 @@ module.exports = {
   getLoanHistory,
   recordRepayment,
   getLoanDetails,
-  getGroupFunds, // NEW
+  getGroupFunds,
+  getGroupLoanTotals,
 };

@@ -18,9 +18,9 @@ const Sidebar = ({ admin }) => {
 
   const navItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
-    { path: "/members", label: "Members", icon: FiUsers },
     { path: "/savings/add", label: "Add Saving", icon: FiDollarSign },
     { path: "/loans", label: "Loans", icon: FiBookOpen },
+    { path: "/members", label: "Members", icon: FiUsers },
   ];
   if (isAdmin) {
     navItems.push({ path: "/reports", label: "Reports", icon: FiBarChart2 });
@@ -36,7 +36,8 @@ const Sidebar = ({ admin }) => {
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-emerald-800 text-white flex flex-col z-20 shadow-xl">
       <div className="p-6 border-b border-emerald-700">
-        <h2 className="text-2xl font-bold">Easy Banking</h2>
+        <h2 className="text-2xl font-bold">Umozi Savings</h2>
+
         <p className="text-emerald-200 text-sm mt-1">
           {groupName} • {groupRole}
         </p>
