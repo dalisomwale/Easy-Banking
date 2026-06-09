@@ -115,7 +115,7 @@ const LandingPage = () => {
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Easy Bank
+              Umozi Savings
               <span className="block text-emerald-200 text-2xl md:text-3xl mt-2">
                 A Village Banking System
               </span>
@@ -182,8 +182,8 @@ const LandingPage = () => {
               Ready to Get Started?
             </h2>
             <p className="text-gray-700 mb-6">
-              Create an account join a group or create your own and start
-              managing savings and loans with ease.
+              Create an account, join a group or create your own and start
+              managing savings, loans and share outs with ease.
             </p>
             {/* Buttons inline on mobile and desktop */}
             <div className="flex flex-row gap-3 justify-center">
@@ -261,12 +261,12 @@ const LandingPage = () => {
                   />
                 </svg>
               </div>
-              <span className="font-semibold">Easy Banking</span>
+              <span className="font-semibold">Umozi Savings</span>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 text-sm text-center">
               <div className="flex items-center gap-2">
                 <FiMail className="text-amber-400" size={14} />
-                <span>easybank@gmail.com</span>
+                <span>info@umozisavings.com</span>
               </div>
               <div className="flex items-center gap-2">
                 <FiPhone className="text-amber-400" size={14} />
@@ -279,7 +279,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="text-center text-xs text-emerald-300/70 mt-6 pt-4 border-t border-emerald-800">
-            &copy; 2026 Easy Banking – Village Banking System. All rights
+            &copy; 2026 Umozi Savings – A Village Banking System. All rights
             reserved.
           </div>
         </div>

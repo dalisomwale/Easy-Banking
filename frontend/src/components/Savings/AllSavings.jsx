@@ -79,7 +79,6 @@ const AllSavings = () => {
           >
             <FiArrowLeft /> Dashboard
           </button>
-          <h1 className="text-2xl font-bold text-gray-800">All Savings</h1>
         </div>
       </div>
 
@@ -114,14 +113,6 @@ const AllSavings = () => {
                 onChange={(e) => setSelectedMonth(e.target.value)}
               />
             </div>
-          </div>
-          <div>
-            <button
-              onClick={resetFilters}
-              className="border border-amber-300 text-amber-700 hover:bg-amber-50 px-4 py-2 rounded-lg w-full transition"
-            >
-              Reset Filters
-            </button>
           </div>
         </div>
       </div>

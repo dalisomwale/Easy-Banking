@@ -10,6 +10,7 @@ import {
   FiUser,
   FiRefreshCw,
   FiTrendingUp,
+  FiArrowLeft,
 } from "react-icons/fi";
 
 const SavingForm = () => {
@@ -123,39 +124,59 @@ const SavingForm = () => {
     `K${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
-    <div className="max-w-4xl mx-auto px-2">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Record Saving</h1>
-      {isMemberSelected && !fetchingData && (
-        <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-5 mb-6 border border-emerald-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-600 rounded-full">
-                <FiTrendingUp className="text-white" size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-emerald-700">Total Savings</p>
-                <p className="text-3xl font-bold text-emerald-800">
-                  {formatMoney(totalSavings)}
-                </p>
-              </div>
-            </div>
-            {role === "admin" && formData.member_id && (
-              <p className="text-sm text-gray-500">
-                {members.find((m) => m.id == formData.member_id)?.fullname}
+    <div style={styles.page}>
+      {/* Header – styled exactly like LoanList member view */}
+      <div style={styles.topBar}>
+        <div style={{ flex: 1 }}>
+          {isMemberSelected && !fetchingData ? (
+            <>
+              <p style={styles.topBarLabel}>
+                {role === "admin" && formData.member_id
+                  ? (members.find((m) => m.id == formData.member_id)
+                      ?.fullname ?? "TOTAL SAVINGS")
+                  : "MY SAVINGS"}
               </p>
-            )}
-          </div>
+              <p style={styles.topBarAmount}>{formatMoney(totalSavings)}</p>
+              <p style={styles.topBarSub}>total savings balance</p>
+            </>
+          ) : (
+            <>
+              <p style={styles.topBarLabel}>
+                {role === "admin" ? "ADMIN" : "MEMBER"}
+              </p>
+              <p
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#1F2937",
+                  marginTop: 4,
+                }}
+              >
+                Record Saving
+              </p>
+            </>
+          )}
         </div>
-      )}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-5">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {role === "admin" && (
-                <div className="relative">
-                  <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+      </div>
+
+      {/* Two‑column layout (unchanged) */}
+      <div style={styles.columns}>
+        {/* Form card */}
+        <div style={styles.card}>
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 12 }}
+          >
+            {role === "admin" && (
+              <div style={styles.fieldGroup}>
+                <label style={styles.fieldLabel}>Member</label>
+                <div style={styles.inputWrap}>
+                  <FiUser
+                    style={{ color: "#9CA3AF", flexShrink: 0 }}
+                    size={15}
+                  />
                   <select
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                    style={styles.input}
                     value={formData.member_id}
                     onChange={handleMemberChange}
                     required
@@ -163,19 +184,32 @@ const SavingForm = () => {
                     <option value="">Select Member</option>
                     {members.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.fullname} - {m.phone}
+                        {m.fullname} — {m.phone}
                       </option>
                     ))}
                   </select>
                 </div>
-              )}
-              <div className="relative">
-                <FiDollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+              </div>
+            )}
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Amount</label>
+              <div style={styles.inputWrap}>
+                <span
+                  style={{
+                    paddingLeft: 12,
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "#9CA3AF",
+                  }}
+                >
+                  K
+                </span>
                 <input
                   type="number"
                   step="0.01"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Amount (Kwacha) *"
+                  style={styles.input}
+                  placeholder="0.00"
                   value={formData.amount}
                   onChange={(e) =>
                     setFormData({ ...formData, amount: e.target.value })
@@ -183,10 +217,17 @@ const SavingForm = () => {
                   required
                 />
               </div>
-              <div className="relative">
-                <FiCreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Payment Method</label>
+              <div style={styles.inputWrap}>
+                <FiCreditCard
+                  style={{ color: "#9CA3AF", flexShrink: 0 }}
+                  size={14}
+                />
                 <select
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                  style={styles.input}
                   value={formData.payment_method}
                   onChange={(e) =>
                     setFormData({ ...formData, payment_method: e.target.value })
@@ -197,11 +238,18 @@ const SavingForm = () => {
                   <option value="bank">Bank Transfer</option>
                 </select>
               </div>
-              <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Date</label>
+              <div style={styles.inputWrap}>
+                <FiCalendar
+                  style={{ color: "#9CA3AF", flexShrink: 0 }}
+                  size={14}
+                />
                 <input
                   type="date"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                  style={styles.input}
                   value={formData.date}
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
@@ -209,95 +257,289 @@ const SavingForm = () => {
                   required
                 />
               </div>
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.fieldLabel}>Notes</label>
               <textarea
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-                rows="3"
-                placeholder="Notes (optional)"
+                style={{ ...styles.input, minHeight: 80, padding: "12px" }}
+                placeholder="Optional notes..."
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
                 }
               />
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg flex items-center justify-center gap-2 transition"
-                >
-                  <FiSave /> {loading ? "Recording..." : "Record Saving"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/")}
-                  className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-5">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Recent Savings
-              </h2>
-              {isMemberSelected && !fetchingData && (
-                <button
-                  onClick={() => fetchSavingsData(formData.member_id)}
-                  className="text-emerald-600 hover:text-emerald-700"
-                >
-                  <FiRefreshCw size={18} />
-                </button>
-              )}
             </div>
-            {!isMemberSelected ? (
-              <div className="min-h-[200px]"></div>
-            ) : fetchingData ? (
-              <p className="text-gray-500 text-center py-8">Loading...</p>
-            ) : recentSavings.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No savings yet</p>
-            ) : (
-              <div className="space-y-3">
-                {recentSavings.map((saving) => (
-                  <div
-                    key={saving.id}
-                    className="border-b border-gray-100 pb-3 last:border-0"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-emerald-600">
-                          +K{saving.amount}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {saving.payment_method}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-700">
-                          {new Date(saving.date).toLocaleDateString()}
-                        </p>
-                        {saving.notes && (
-                          <p className="text-xs text-amber-600">
-                            {saving.notes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {recentSavings.length === 5 && (
-                  <p className="text-xs text-gray-400 text-center mt-2">
-                    Showing last 5 entries
-                  </p>
-                )}
-              </div>
+
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={styles.primaryBtn}
+              >
+                <FiSave size={15} /> {loading ? "Recording…" : "Record Saving"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                style={styles.outlineBtn}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Recent savings card */}
+        <div style={styles.card}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <p style={styles.sectionTitle}>Recent Savings</p>
+            {isMemberSelected && !fetchingData && (
+              <button
+                onClick={() => fetchSavingsData(formData.member_id)}
+                style={styles.refreshBtn}
+              >
+                <FiRefreshCw size={16} />
+              </button>
             )}
           </div>
+
+          {!isMemberSelected ? (
+            <div style={{ minHeight: 200 }} />
+          ) : fetchingData ? (
+            <p
+              style={{
+                textAlign: "center",
+                color: "#9CA3AF",
+                padding: "24px 0",
+              }}
+            >
+              Loading...
+            </p>
+          ) : recentSavings.length === 0 ? (
+            <p
+              style={{
+                textAlign: "center",
+                color: "#9CA3AF",
+                padding: "24px 0",
+              }}
+            >
+              No savings yet
+            </p>
+          ) : (
+            <div>
+              {recentSavings.map((saving) => (
+                <div key={saving.id} style={styles.savingRow}>
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#059669",
+                      }}
+                    >
+                      +K{Number(saving.amount).toFixed(2)}
+                    </p>
+                    <p style={{ fontSize: 12, color: "#9CA3AF" }}>
+                      {saving.payment_method}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: 13, color: "#1F2937" }}>
+                      {new Date(saving.date).toLocaleDateString()}
+                    </p>
+                    {saving.notes && (
+                      <p style={{ fontSize: 11, color: "#D97706" }}>
+                        {saving.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {recentSavings.length === 5 && (
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "#9CA3AF",
+                    textAlign: "center",
+                    marginTop: 8,
+                  }}
+                >
+                  Showing last 5 entries
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
+
+const styles = {
+  page: {
+    display: "flex",
+    flexDirection: "column",
+    background: "#F8F9FB",
+    minHeight: "100vh",
+  },
+
+  // --- Header (matching LoanList member view) ---
+  topBar: {
+    background: "#fff",
+    padding: "24px 20px 20px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    borderBottom: "1px solid #E5E7EB",
+    gap: 12,
+  },
+  backBtn: {
+    background: "#F3F4F6",
+    border: "none",
+    borderRadius: 10,
+    width: 36,
+    height: 36,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#374151",
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+  topBarLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    color: "#059669",
+    marginBottom: 6,
+  },
+  topBarAmount: {
+    fontSize: 36,
+    fontWeight: 800,
+    color: "#059669",
+    letterSpacing: "-0.02em",
+    fontVariantNumeric: "tabular-nums",
+    lineHeight: 1,
+  },
+  topBarSub: { fontSize: 12, color: "#6B7280", marginTop: 4 },
+
+  fabSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: "50%",
+    background: "#059669",
+    border: "none",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    flexShrink: 0,
+    alignSelf: "flex-start",
+  },
+
+  // --- Rest of the layout ---
+  columns: {
+    display: "flex",
+    gap: 16,
+    padding: "16px",
+    flexWrap: "wrap",
+  },
+  card: {
+    flex: "1 1 300px",
+    background: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  },
+
+  fieldGroup: { display: "flex", flexDirection: "column", gap: 5 },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    color: "#6B7280",
+    textTransform: "uppercase",
+    paddingLeft: 2,
+  },
+  inputWrap: {
+    display: "flex",
+    alignItems: "center",
+    background: "#fff",
+    borderRadius: 12,
+    border: "1.5px solid #E5E7EB",
+    overflow: "hidden",
+    paddingLeft: 12,
+  },
+  input: {
+    flex: 1,
+    border: "none",
+    outline: "none",
+    padding: "12px 12px 12px 8px",
+    fontSize: 14,
+    color: "#1F2937",
+    background: "transparent",
+    width: "100%",
+    fontVariantNumeric: "tabular-nums",
+  },
+
+  primaryBtn: {
+    flex: 2,
+    background: "#059669",
+    color: "#fff",
+    border: "none",
+    borderRadius: 12,
+    padding: "13px",
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  outlineBtn: {
+    flex: 1,
+    background: "#fff",
+    border: "1.5px solid #E5E7EB",
+    borderRadius: 12,
+    padding: "13px",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#6B7280",
+    cursor: "pointer",
+  },
+
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: "#6B7280",
+    textTransform: "uppercase",
+  },
+  refreshBtn: {
+    background: "none",
+    border: "none",
+    color: "#059669",
+    cursor: "pointer",
+    padding: 4,
+  },
+
+  savingRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    padding: "12px 0",
+    borderBottom: "1px solid #F3F4F6",
+  },
+};
+
 export default SavingForm;

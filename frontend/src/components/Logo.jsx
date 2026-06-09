@@ -77,7 +77,7 @@ const Logo = ({ size = "default", showText = true, variant = "light" }) => {
         <span
           className={`font-semibold tracking-wide ${sizeClasses[size]} ${textColor}`}
         >
-          Easy Banking
+          Umozi Savings
         </span>
       )}
     </div>

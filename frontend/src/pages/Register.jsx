@@ -111,7 +111,7 @@ const Register = () => {
             </div>
           </div>
           <h1 className="text-lg sm:text-xl font-bold text-white">
-            Easy Banking
+            Umozi Savings
           </h1>
           <p className="text-emerald-100 text-xs">Create Account</p>
         </div>

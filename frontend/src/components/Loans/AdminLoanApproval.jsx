@@ -136,11 +136,6 @@ const AdminLoanApproval = () => {
                 />
               </div>
             </div>
-            <div>
-              <button onClick={resetFilters} className="btn-secondary">
-                Reset Filters
-              </button>
-            </div>
           </div>
 
           {loading ? (

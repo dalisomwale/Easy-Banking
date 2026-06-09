@@ -34,7 +34,7 @@ const CreateGroup = () => {
         <div className="bg-emerald-700/50 p-4 text-center">
           <h1 className="text-xl font-bold text-white">Create New Group</h1>
           <p className="text-emerald-100 text-xs mt-1">
-            Start your own banking circle
+            Start your own banking group
           </p>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -80,7 +80,6 @@ const CreateGroup = () => {
             </button>
           </div>
         </form>
-        <div className="pb-4 text-center text-white/40 text-xs">v.26.0.1</div>
       </div>
     </div>
   );

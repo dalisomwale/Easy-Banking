@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FiPocket, FiTrendingUp } from "react-icons/fi";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   FiHome,
@@ -47,14 +48,14 @@ const Layout = () => {
   if (isAdmin) {
     // Admin: Add "All Savings", "Loans", and "Reports" – no "Add Saving"
     navItems.push(
-      { path: "/app/savings/all", label: "All Savings", icon: FiDollarSign },
+      { path: "/app/savings/all", label: "All Savings", icon: FiPocket },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
       { path: "/app/reports", label: "Reports", icon: FiBarChart2 },
     );
   } else {
     // Member: Add "Add Saving" and "Loans" – no "All Savings"
     navItems.push(
-      { path: "/app/savings/add", label: "Add Saving", icon: FiDollarSign },
+      { path: "/app/savings/add", label: "Add Saving", icon: FiPocket },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
     );
   }

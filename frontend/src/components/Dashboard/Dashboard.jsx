@@ -274,6 +274,7 @@ const Dashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-emerald-700 text-sm font-medium">Group Funds</p>
+
             <p className="text-3xl font-bold text-emerald-800 mt-1">
               {formatMoney(stats.total_funds)}
             </p>
@@ -297,23 +298,17 @@ const Dashboard = () => {
                 {formatMoney(stats.total_savings)}
               </p>
             </div>
-            <div className="bg-emerald-100 p-2 rounded-full">
-              <FiDollarSign className="text-emerald-600" size={20} />
-            </div>
           </div>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-xs uppercase tracking-wide">
-                My Outstanding Loan
+                My Loan
               </p>
               <p className="text-xl font-semibold text-amber-600 mt-1">
                 {formatMoney(memberLoanTotal)}
               </p>
-            </div>
-            <div className="bg-amber-100 p-2 rounded-full">
-              <FiTrendingUp className="text-amber-600" size={20} />
             </div>
           </div>
         </div>

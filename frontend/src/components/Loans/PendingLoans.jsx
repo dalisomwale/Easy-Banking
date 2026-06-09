@@ -90,12 +90,12 @@ const PendingLoans = () => {
     <div className="space-y-4">
       <div className="flex items-center gap-4 mb-4">
         <button
-          onClick={() => navigate("/app/loans")} // ✅ fixed: back to loans under /app
+          onClick={() => navigate("/app/loans")}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
         >
           <FiArrowLeft /> Back to Loans
         </button>
-        <h1 className="text-2xl font-bold">Pending Loan Requests</h1>
+        <h1 className="text-2xl font-bold">Loan Requests</h1>
       </div>
 
       <div className="card">

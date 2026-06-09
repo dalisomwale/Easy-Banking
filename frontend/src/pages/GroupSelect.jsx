@@ -91,7 +91,7 @@ const GroupSelect = () => {
                       Role: <span className="font-medium">{group.role}</span>
                     </p>
                     <div className="flex items-center gap-2 mt-2 text-emerald-100 text-sm">
-                      <FiCode className="text-amber-300" /> Code:{" "}
+                      <FiCode className="text-amber-300" /> Group Code:{" "}
                       <span className="font-mono font-medium">
                         {group.code}
                       </span>
@@ -118,7 +118,7 @@ const GroupSelect = () => {
               You are not a member of any group yet.
             </p>
             <p className="text-emerald-100 text-sm">
-              Create a new group or join using a join code.
+              Create a new group or join using a group code.
             </p>
           </div>
         )}

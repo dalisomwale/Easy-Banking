@@ -38,7 +38,7 @@ const JoinGroup = () => {
         <div className="bg-emerald-700/50 p-4 text-center">
           <h1 className="text-xl font-bold text-white">Join Existing Group</h1>
           <p className="text-emerald-100 text-xs mt-1">
-            Enter the group's join code
+            Enter the group's code
           </p>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-5">
@@ -72,7 +72,7 @@ const JoinGroup = () => {
           </div>
         </form>
         <div className="pb-4 text-center text-white/40 text-xs">
-          Kindly contact your group admin for the join code.
+          Kindly contact your admin for the group code.
         </div>
       </div>
     </div>

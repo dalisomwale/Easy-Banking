@@ -90,7 +90,7 @@ const Login = () => {
             </div>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Easy Banking
+            Umozi Savings
           </h1>
           <p className="text-emerald-100 text-xs sm:text-sm mt-1">
             A Village Banking System

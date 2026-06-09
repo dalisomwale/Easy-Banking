@@ -7,7 +7,7 @@ const Header = ({ admin, onLogout }) => {
       <div className="flex items-center justify-between px-4 py-4">
         <div>
           <h1 className="text-xl font-bold">Umozi Savings</h1>
-          <p className="text-xs text-emerald-100">Village Banking</p>
+          <p className="text-xs text-emerald-100">A Village Banking System</p>
         </div>
         <button
           onClick={onLogout}
