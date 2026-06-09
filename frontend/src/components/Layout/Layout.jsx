@@ -55,7 +55,8 @@ const Layout = () => {
   } else {
     // Member: Add "Add Saving" and "Loans" – no "All Savings"
     navItems.push(
-      { path: "/app/savings/add", label: "Add Saving", icon: FiPocket },
+      { path: "/app/savings/add", label: "Savings", icon: FiPocket },
+
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
     );
   }

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiPlus,
-  FiEye,
   FiTrendingUp,
   FiAlertCircle,
   FiClock,
   FiChevronRight,
+  FiChevronDown,
   FiDollarSign,
   FiUserCheck,
   FiUserX,
@@ -15,17 +15,43 @@ import {
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
+// ── Shared hero header (matches Dashboard) ────────────────────────────────
+const HeroHeader = () => (
+  <div style={styles.heroHeader}>
+    <div style={styles.circle1} />
+    <div style={styles.circle2} />
+  </div>
+);
+
+// ── Floating hero card ────────────────────────────────────────────────────
+const HeroCard = ({ label, value, sub, action }) => (
+  <div style={styles.heroCardWrap}>
+    <div style={styles.heroCard}>
+      <div style={{ flex: 1 }}>
+        <p style={styles.heroLabel}>{label}</p>
+        <p style={styles.heroAmount}>{value}</p>
+        <p style={styles.heroSub}>{sub}</p>
+      </div>
+      {action && (
+        <button style={styles.fabSmall} onClick={action.onClick}>
+          {action.icon}
+        </button>
+      )}
+    </div>
+  </div>
+);
+
 const LoanList = () => {
   const navigate = useNavigate();
   const groupId = localStorage.getItem("selectedGroupId");
   const role = localStorage.getItem("selectedGroupRole");
   const [memberId, setMemberId] = useState(localStorage.getItem("member_id"));
   const [activeLoans, setActiveLoans] = useState([]);
-  const [pendingLoans, setPendingLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activities, setActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
+  const [expandedLoanId, setExpandedLoanId] = useState(null); // track expanded loan
 
   useEffect(() => {
     const fetchMemberId = async () => {
@@ -78,7 +104,6 @@ const LoanList = () => {
   const fetchMemberLoans = async () => {
     try {
       const res = await api.get(`/loans/history/${groupId}/${memberId}`);
-      setPendingLoans(res.data.filter((l) => l.status === "pending"));
       setActiveLoans(res.data.filter((l) => l.status === "active"));
     } catch (err) {
       const msg = err.response?.data?.message || err.message;
@@ -97,7 +122,6 @@ const LoanList = () => {
       setActivities(res.data);
     } catch (err) {
       console.error("Failed to fetch activities:", err);
-      // Don't show toast for activities, silently fail
     } finally {
       setLoadingActivities(false);
     }
@@ -204,60 +228,32 @@ const LoanList = () => {
       </div>
     );
 
-  /* ── MEMBER VIEW ── */
+  /* ── MEMBER VIEW with expandable active loans ── */
   if (role === "member") {
     return (
       <div style={styles.page}>
-        {/* Header */}
-        <div style={styles.topBar}>
-          <div>
-            <p style={styles.topBarLabel}>MY LOANS</p>
-            <p style={styles.topBarAmount}>
-              K
-              {totalOutstanding.toLocaleString("en", {
-                minimumFractionDigits: 2,
-              })}
-            </p>
-            <p style={styles.topBarSub}>outstanding balance</p>
-          </div>
+        <HeroHeader />
+
+        <HeroCard
+          label="MY LOANS"
+          value={`K${totalOutstanding.toLocaleString("en", {
+            minimumFractionDigits: 2,
+          })}`}
+          sub="outstanding balance"
+        />
+
+        {/* Request Loan card (identical to Add Savings card) */}
+        <div style={styles.requestCard}>
           <button
-            style={styles.fabSmall}
+            style={styles.requestLoanBtn}
             onClick={() => navigate("/app/loans/request")}
           >
-            <FiPlus size={20} />
+            <FiPlus size={18} />
+            <span>Request a Loan</span>
           </button>
         </div>
 
-        {/* Pending */}
-        {pendingLoans.length > 0 && (
-          <div style={styles.section}>
-            <div style={styles.sectionHeader}>
-              <FiClock size={14} style={{ color: "#D97706" }} />
-              <span style={{ ...styles.sectionTitle, color: "#D97706" }}>
-                Pending
-              </span>
-            </div>
-            {pendingLoans.map((loan) => (
-              <div
-                key={loan.id}
-                style={styles.pendingCard}
-                onClick={() => navigate(`/app/loans/${loan.id}`)}
-              >
-                <div>
-                  <p style={styles.cardAmount}>
-                    K{toNum(loan.amount).toLocaleString()}
-                  </p>
-                  <p style={styles.cardMeta}>
-                    Requested {new Date(loan.issue_date).toLocaleDateString()}
-                  </p>
-                </div>
-                <div style={styles.pendingBadge}>Awaiting approval</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Active */}
+        {/* Active loans - expandable list */}
         <div style={styles.section}>
           <div style={styles.sectionHeader}>
             <span style={styles.sectionTitle}>Active Loans</span>
@@ -265,12 +261,6 @@ const LoanList = () => {
           {activeLoans.length === 0 ? (
             <div style={styles.emptyState}>
               <p style={styles.emptyText}>No active loans</p>
-              <button
-                style={styles.emptyBtn}
-                onClick={() => navigate("/app/loans/request")}
-              >
-                Request a Loan
-              </button>
             </div>
           ) : (
             activeLoans.map((loan) => {
@@ -279,100 +269,114 @@ const LoanList = () => {
               const remaining = toNum(loan.remaining);
               const pct = totalDue === 0 ? 0 : (paid / totalDue) * 100;
               const overdue = new Date(loan.due_date) < new Date();
+              const isExpanded = expandedLoanId === loan.id;
+
               return (
-                <div key={loan.id} style={styles.loanCard}>
-                  <div style={styles.loanCardTop}>
-                    <div>
-                      <p style={styles.loanId}>Loan #{loan.id}</p>
-                      <p style={styles.cardMeta}>
+                <div key={loan.id} style={styles.activeLoanItem}>
+                  {/* Summary row - click to expand/collapse */}
+                  <div
+                    style={styles.loanSummaryRow}
+                    onClick={() =>
+                      setExpandedLoanId(isExpanded ? null : loan.id)
+                    }
+                  >
+                    <div style={styles.summaryLeft}>
+                      <p style={styles.summaryLoanId}>Loan #{loan.id}</p>
+                      <p style={styles.summaryDue}>
                         Due {new Date(loan.due_date).toLocaleDateString()}
                       </p>
                     </div>
-                    {overdue ? (
-                      <span style={styles.badgeRed}>
-                        <FiAlertCircle size={11} /> Overdue
-                      </span>
-                    ) : (
-                      <span style={styles.badgeGreen}>On Track</span>
-                    )}
-                  </div>
-
-                  <div style={styles.amountRow}>
-                    <div style={styles.amountBlock}>
-                      <span style={styles.amountVal}>
-                        K{toNum(loan.amount).toLocaleString()}
-                      </span>
-                      <span style={styles.amountLabel}>PRINCIPAL</span>
-                    </div>
-                    <div style={styles.amountDivider} />
-                    <div style={styles.amountBlock}>
-                      <span style={{ ...styles.amountVal, color: "#059669" }}>
-                        K{paid.toFixed(2)}
-                      </span>
-                      <span style={styles.amountLabel}>PAID</span>
-                    </div>
-                    <div style={styles.amountDivider} />
-                    <div style={styles.amountBlock}>
-                      <span style={{ ...styles.amountVal, color: "#D97706" }}>
-                        K{remaining.toFixed(2)}
-                      </span>
-                      <span style={styles.amountLabel}>REMAINING</span>
+                    <div style={styles.summaryRight}>
+                      {overdue ? (
+                        <span style={styles.badgeRedSmall}>
+                          <FiAlertCircle size={10} /> Overdue
+                        </span>
+                      ) : (
+                        <span style={styles.badgeGreenSmall}>Active</span>
+                      )}
+                      {isExpanded ? (
+                        <FiChevronDown size={16} style={{ color: "#9CA3AF" }} />
+                      ) : (
+                        <FiChevronRight
+                          size={16}
+                          style={{ color: "#9CA3AF" }}
+                        />
+                      )}
                     </div>
                   </div>
 
-                  <div style={styles.progressWrap}>
-                    <div style={styles.progressTrack}>
-                      <div
-                        style={{ ...styles.progressFill, width: `${pct}%` }}
-                      />
-                    </div>
-                    <span style={styles.progressLabel}>
-                      {pct.toFixed(0)}% repaid
-                    </span>
-                  </div>
+                  {/* Expanded detailed card */}
+                  {isExpanded && (
+                    <div style={styles.expandedDetails}>
+                      <div style={styles.amountRow}>
+                        <div style={styles.amountBlock}>
+                          <span style={styles.amountVal}>
+                            K{toNum(loan.amount).toLocaleString()}
+                          </span>
+                          <span style={styles.amountLabel}>PRINCIPAL</span>
+                        </div>
+                        <div style={styles.amountDivider} />
+                        <div style={styles.amountBlock}>
+                          <span
+                            style={{ ...styles.amountVal, color: "#059669" }}
+                          >
+                            K{paid.toFixed(2)}
+                          </span>
+                          <span style={styles.amountLabel}>PAID</span>
+                        </div>
+                        <div style={styles.amountDivider} />
+                        <div style={styles.amountBlock}>
+                          <span
+                            style={{ ...styles.amountVal, color: "#D97706" }}
+                          >
+                            K{remaining.toFixed(2)}
+                          </span>
+                          <span style={styles.amountLabel}>REMAINING</span>
+                        </div>
+                      </div>
 
-                  <button
-                    style={styles.payBtn}
-                    onClick={() => navigate(`/app/loans/${loan.id}/repayment`)}
-                  >
-                    <FiTrendingUp size={15} /> Make Payment
-                  </button>
+                      <div style={styles.progressWrap}>
+                        <div style={styles.progressTrack}>
+                          <div
+                            style={{ ...styles.progressFill, width: `${pct}%` }}
+                          />
+                        </div>
+                        <span style={styles.progressLabel}>
+                          {pct.toFixed(0)}% repaid
+                        </span>
+                      </div>
+
+                      <button
+                        style={styles.payBtn}
+                        onClick={() =>
+                          navigate(`/app/loans/${loan.id}/repayment`)
+                        }
+                      >
+                        Make Repayment
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })
           )}
         </div>
 
-        {/* Recent Activities */}
         <ActivityList />
       </div>
     );
   }
 
-  /* ── ADMIN VIEW ── */
+  /* ── ADMIN VIEW (unchanged) ── */
   return (
     <div style={styles.page}>
-      <div style={styles.adminHeader}>
-        <div>
-          <p style={styles.topBarLabel}>ACTIVE LOANS</p>
-          <p
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              color: "#1F2937",
-              marginTop: 2,
-            }}
-          >
-            {activeLoans.length} borrowers
-          </p>
-        </div>
-        <button
-          style={styles.pendingBtn}
-          onClick={() => navigate("/app/loans/pending")}
-        >
-          <FiClock size={14} /> Pending
-        </button>
-      </div>
+      <HeroHeader />
+
+      <HeroCard
+        label="ACTIVE LOANS"
+        value={`${activeLoans.length} borrowers`}
+        sub="currently active"
+      />
 
       <div style={styles.section}>
         {activeLoans.length === 0 ? (
@@ -456,7 +460,6 @@ const LoanList = () => {
         )}
       </div>
 
-      {/* Recent Activities */}
       <ActivityList />
     </div>
   );
@@ -494,34 +497,72 @@ const styles = {
     animation: "spin 0.7s linear infinite",
   },
 
-  topBar: {
+  heroHeader: {
+    background: "#064E3B",
+    borderRadius: "0 0 2rem 2rem",
+    padding: "1.5rem 1.5rem 3.75rem",
+    position: "relative",
+    overflow: "hidden",
+  },
+  circle1: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 180,
+    height: 180,
+    background: "rgba(255,255,255,0.05)",
+    borderRadius: "50%",
+  },
+  circle2: {
+    position: "absolute",
+    bottom: -60,
+    left: "30%",
+    width: 240,
+    height: 240,
+    background: "rgba(255,255,255,0.04)",
+    borderRadius: "50%",
+  },
+
+  heroCardWrap: {
+    padding: "0 1rem",
+    marginTop: "-1.75rem",
+    position: "relative",
+    zIndex: 2,
+  },
+  heroCard: {
     background: "#fff",
-    padding: "24px 20px 20px",
+    border: "0.5px solid #E5E7EB",
+    borderRadius: 16,
+    padding: "1.25rem 1.5rem",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    borderBottom: "1px solid #E5E7EB",
+    alignItems: "center",
   },
-  topBarLabel: {
-    fontSize: 10,
+  heroLabel: {
+    fontSize: 11,
+    color: "#6B7280",
+    fontWeight: 500,
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    margin: 0,
+  },
+  heroAmount: {
+    fontSize: 34,
     fontWeight: 700,
-    letterSpacing: "0.12em",
-    color: "#059669",
-    marginBottom: 6,
-  },
-  topBarAmount: {
-    fontSize: 36,
-    fontWeight: 800,
-    color: "#059669",
-    letterSpacing: "-0.02em",
-    fontVariantNumeric: "tabular-nums",
+    color: "#065F46",
+    margin: "4px 0 2px",
     lineHeight: 1,
+    fontVariantNumeric: "tabular-nums",
   },
-  topBarSub: { fontSize: 12, color: "#6B7280", marginTop: 4 },
-
+  heroSub: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    margin: 0,
+  },
   fabSmall: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: "50%",
     background: "#059669",
     border: "none",
@@ -531,28 +572,39 @@ const styles = {
     justifyContent: "center",
     cursor: "pointer",
     flexShrink: 0,
+    transition: "all 0.2s ease",
+    ":hover": {
+      background: "#047857",
+      transform: "scale(1.02)",
+    },
   },
 
-  adminHeader: {
+  // Request Loan card (exactly like Add Savings card)
+  requestCard: {
     background: "#fff",
-    padding: "24px 20px 20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    borderBottom: "1px solid #E5E7EB",
+    borderRadius: 16,
+    margin: "0 16px 16px 16px",
+    padding: 16,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
   },
-  pendingBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    background: "#FEF3C7",
-    color: "#D97706",
+  requestLoanBtn: {
+    width: "100%",
+    background: "#059669",
+    color: "#fff",
     border: "none",
-    borderRadius: 20,
-    padding: "8px 14px",
-    fontSize: 13,
+    borderRadius: 12,
+    padding: "14px",
+    fontSize: 14,
     fontWeight: 600,
     cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    transition: "background 0.2s ease",
+    ":hover": {
+      background: "#047857",
+    },
   },
 
   section: {
@@ -575,41 +627,77 @@ const styles = {
     textTransform: "uppercase",
   },
 
-  pendingCard: {
-    background: "#ffffff",
-    border: "1px solid #fadfdf",
-    borderRadius: 14,
-    padding: "14px 16px",
+  // Expandable loan styles
+  activeLoanItem: {
+    background: "#fff",
+    borderRadius: 16,
+    overflow: "hidden",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  },
+  loanSummaryRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    padding: "14px 16px",
     cursor: "pointer",
+    backgroundColor: "#fff",
+    transition: "background 0.1s ease",
+    ":hover": {
+      backgroundColor: "#F9FAFB",
+    },
   },
-  pendingBadge: {
-    fontSize: 11,
+  summaryLeft: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  summaryLoanId: {
+    fontSize: 14,
     fontWeight: 600,
-    color: "#D97706",
-    background: "#FEF3C7",
-    borderRadius: 20,
-    padding: "4px 10px",
+    color: "#1F2937",
+    margin: 0,
   },
-
-  loanCard: {
-    background: "#FFFFFF",
-    borderRadius: 16,
-    padding: "16px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  summaryDue: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    margin: 0,
+  },
+  summaryRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+  badgeGreenSmall: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: "#059669",
+    background: "#ECFDF5",
+    borderRadius: 20,
+    padding: "2px 8px",
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+  },
+  badgeRedSmall: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: "#EF4444",
+    background: "#FEF2F2",
+    borderRadius: 20,
+    padding: "2px 8px",
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+  },
+  expandedDetails: {
+    padding: "0 16px 16px 16px",
+    borderTop: "1px solid #F3F4F6",
     display: "flex",
     flexDirection: "column",
     gap: 12,
   },
-  loanCardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  loanId: { fontSize: 14, fontWeight: 700, color: "#1F2937" },
 
+  // Detailed card styles (shared with previous loanCard)
   amountRow: { display: "flex", alignItems: "center", gap: 0 },
   amountBlock: {
     flex: 1,
@@ -631,7 +719,6 @@ const styles = {
     letterSpacing: "0.08em",
     color: "#9CA3AF",
   },
-
   progressWrap: { display: "flex", alignItems: "center", gap: 8 },
   progressTrack: { flex: 1, height: 4, borderRadius: 2, background: "#E5E7EB" },
   progressFill: {
@@ -641,12 +728,11 @@ const styles = {
     transition: "width 0.4s ease",
   },
   progressLabel: { fontSize: 11, color: "#9CA3AF", whiteSpace: "nowrap" },
-
   payBtn: {
     background: "#059669",
     color: "#fff",
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: "12px",
     fontSize: 14,
     fontWeight: 600,
@@ -656,16 +742,12 @@ const styles = {
     justifyContent: "center",
     gap: 6,
     width: "100%",
+    transition: "all 0.2s ease",
+    ":hover": {
+      background: "#047857",
+      transform: "scale(1.01)",
+    },
   },
-
-  cardAmount: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#1F2937",
-    fontVariantNumeric: "tabular-nums",
-  },
-  cardMeta: { fontSize: 12, color: "#9CA3AF", marginTop: 2 },
-
   badgeGreen: {
     fontSize: 11,
     fontWeight: 600,
@@ -688,7 +770,6 @@ const styles = {
     alignItems: "center",
     gap: 3,
   },
-
   emptyState: {
     padding: "32px 0",
     display: "flex",
@@ -697,17 +778,8 @@ const styles = {
     gap: 12,
   },
   emptyText: { color: "#9CA3AF", fontSize: 14 },
-  emptyBtn: {
-    background: "#059669",
-    color: "#fff",
-    border: "none",
-    borderRadius: 10,
-    padding: "10px 20px",
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-  },
 
+  // Admin styles
   adminLoanRow: {
     background: "#fff",
     borderRadius: 14,
@@ -746,12 +818,10 @@ const styles = {
     flexShrink: 0,
   },
   adminName: { fontSize: 14, fontWeight: 600, color: "#1F2937" },
+  cardMeta: { fontSize: 12, color: "#9CA3AF", marginTop: 2 },
 
-  // Recent Activities Styles
-  recentSection: {
-    padding: "8px 16px 32px",
-    marginTop: 4,
-  },
+  // Activities
+  recentSection: { padding: "8px 16px 32px", marginTop: 4 },
   activityCard: {
     background: "#fff",
     borderRadius: 16,
@@ -774,9 +844,7 @@ const styles = {
     justifyContent: "center",
     flexShrink: 0,
   },
-  activityContent: {
-    flex: 1,
-  },
+  activityContent: { flex: 1 },
   activityDescription: {
     fontSize: 13,
     fontWeight: 500,
@@ -790,25 +858,15 @@ const styles = {
     fontSize: 11,
     color: "#9CA3AF",
   },
-  activityMember: {
-    color: "#6B7280",
-  },
-  activityAmount: {
-    fontWeight: 600,
-    color: "#059669",
-  },
-  activityDate: {
-    color: "#9CA3AF",
-  },
+  activityMember: { color: "#6B7280" },
+  activityAmount: { fontWeight: 600, color: "#059669" },
+  activityDate: { color: "#9CA3AF" },
   activityLoading: {
     padding: "24px",
     display: "flex",
     justifyContent: "center",
   },
-  activityEmpty: {
-    padding: "24px",
-    textAlign: "center",
-  },
+  activityEmpty: { padding: "24px", textAlign: "center" },
 };
 
 export default LoanList;

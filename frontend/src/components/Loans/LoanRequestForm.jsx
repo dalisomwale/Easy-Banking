@@ -8,6 +8,7 @@ import {
   FiClock,
   FiArrowLeft,
   FiAlertCircle,
+  FiDollarSign,
 } from "react-icons/fi";
 
 const LoanRequestForm = () => {
@@ -72,34 +73,39 @@ const LoanRequestForm = () => {
 
   return (
     <div style={styles.page}>
-      {/* Title bar: back button + heading */}
-      <div style={styles.titleBar}>
-        <div>
-          <p style={styles.topTitle}>Request a Loan</p>
+      {/* Hero header with arrow button and heading */}
+      <div style={styles.heroHeader}>
+        <div style={styles.headerRow}>
+          <button onClick={() => navigate(-1)} style={styles.backBtn}>
+            <FiArrowLeft size={16} color="#A7F3D0" />
+          </button>
+          <h1 style={styles.pageHeading}>Request a Loan</h1>
         </div>
       </div>
 
-      {/* Group funds bar – exact same style as the approved loan‑list header */}
-      {totalFunds !== null && (
-        <div style={styles.fundsBar}>
+      {/* Floating hero card */}
+      <div style={styles.heroCardWrap}>
+        <div style={styles.heroCard}>
           <div style={{ flex: 1 }}>
-            <p style={styles.fundsBarLabel}>AVAILABLE GROUP FUNDS</p>
-            <p style={styles.fundsBarAmount}>
-              K{totalFunds.toLocaleString("en", { minimumFractionDigits: 2 })}
+            <p style={styles.heroLabel}>AVAILABLE GROUP FUNDS</p>
+            <p style={styles.heroAmount}>
+              {totalFunds !== null
+                ? `K${totalFunds.toLocaleString("en", { minimumFractionDigits: 2 })}`
+                : "Loading…"}
             </p>
-            <p style={styles.fundsBarSub}>from savings & repayments</p>
+            <p style={styles.heroSub}>from savings &amp; repayments</p>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Form body */}
+      {/* Form body (unchanged) */}
       <div style={styles.body}>
         <div style={styles.card}>
           <form
             onSubmit={handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: 10 }}
           >
-            {/* Amount */}
+            {/* Amount field */}
             <div style={styles.fieldGroup}>
               <label style={styles.fieldLabel}>Loan Amount</label>
               <div
@@ -212,7 +218,7 @@ const LoanRequestForm = () => {
               </div>
             </div>
 
-            {/* Summary (green card) */}
+            {/* Summary (only when amount entered) */}
             {formData.amount && (
               <div style={styles.summaryCard}>
                 <p style={styles.summaryTitle}>Loan Summary</p>
@@ -278,7 +284,7 @@ const LoanRequestForm = () => {
                   opacity: loading || exceedsFunds ? 0.5 : 1,
                 }}
               >
-                {loading ? "Submitting…" : "Submit Request"}
+                {loading ? "Submitting…" : "Request Loan"}
               </button>
             </div>
           </form>
@@ -296,70 +302,97 @@ const styles = {
     minHeight: "100vh",
   },
 
-  // --- Title bar (heading only) ---
-  titleBar: {
-    background: "#fff",
-    padding: "20px 16px",
+  // Hero header with arrow button and heading
+  heroHeader: {
+    background: "#064E3B",
+    borderRadius: "0 0 2rem 2rem",
+    padding: "1.5rem 1.5rem 3.75rem",
+    position: "relative",
+    overflow: "hidden",
+  },
+  circle1: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 180,
+    height: 180,
+    background: "rgba(255,255,255,0.05)",
+    borderRadius: "50%",
+  },
+  circle2: {
+    position: "absolute",
+    bottom: -60,
+    left: "30%",
+    width: 240,
+    height: 240,
+    background: "rgba(255,255,255,0.04)",
+    borderRadius: "50%",
+  },
+  headerRow: {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    borderBottom: "1px solid #E5E7EB",
+    position: "relative",
+    zIndex: 1,
   },
-  backBtn: {
-    background: "#F3F4F6",
-    border: "none",
-    borderRadius: 10,
-    width: 36,
-    height: 36,
+  pageHeading: {
+    fontSize: 18,
+    fontWeight: 600,
+    color: "#fff",
+    margin: 0,
+    letterSpacing: "-0.3px",
+  },
+
+  // Floating hero card (unchanged)
+  heroCardWrap: {
+    padding: "0 1rem",
+    marginTop: "-1.75rem",
+    position: "relative",
+    zIndex: 2,
+  },
+  heroCard: {
+    background: "#fff",
+    border: "0.5px solid #E5E7EB",
+    borderRadius: 16,
+    padding: "1.25rem 1.5rem",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  heroLabel: {
+    fontSize: 11,
+    color: "#6B7280",
+    fontWeight: 500,
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    margin: 0,
+  },
+  heroAmount: {
+    fontSize: 34,
+    fontWeight: 700,
+    color: "#065F46",
+    margin: "4px 0 2px",
+    lineHeight: 1,
+    fontVariantNumeric: "tabular-nums",
+  },
+  heroSub: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    margin: 0,
+  },
+  heroIconWrap: {
+    background: "#D1FAE5",
+    borderRadius: "50%",
+    width: 50,
+    height: 50,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#374151",
-    cursor: "pointer",
-  },
-  topLabel: {
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: "0.12em",
-    color: "#059669",
-  },
-  topTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#1F2937",
-    marginTop: 2,
+    flexShrink: 0,
   },
 
-  // --- Group funds bar (exact copy of loan‑list top bar) ---
-  fundsBar: {
-    background: "#fff",
-    padding: "24px 20px 20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    borderBottom: "1px solid #E5E7EB",
-  },
-  fundsBarLabel: {
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: "0.12em",
-    color: "#059669",
-    marginBottom: 6,
-  },
-  fundsBarAmount: {
-    fontSize: 36,
-    fontWeight: 800,
-    color: "#059669",
-    letterSpacing: "-0.02em",
-    fontVariantNumeric: "tabular-nums",
-    lineHeight: 1,
-  },
-  fundsBarSub: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 4,
-  },
-
+  // Form body (unchanged)
   body: { padding: "16px" },
   card: {
     background: "#fff",
@@ -367,7 +400,6 @@ const styles = {
     padding: 16,
     boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
   },
-
   fieldGroup: { display: "flex", flexDirection: "column", gap: 5 },
   fieldLabel: {
     fontSize: 11,
@@ -396,7 +428,6 @@ const styles = {
     width: "100%",
     fontVariantNumeric: "tabular-nums",
   },
-
   warningNote: {
     display: "flex",
     alignItems: "center",
@@ -406,7 +437,6 @@ const styles = {
     fontWeight: 600,
     paddingLeft: 2,
   },
-
   summaryCard: {
     background: "#ECFDF5",
     border: "1.5px solid #A7F3D0",
@@ -421,11 +451,7 @@ const styles = {
     textTransform: "uppercase",
     marginBottom: 10,
   },
-  summaryRows: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  },
+  summaryRows: { display: "flex", flexDirection: "column", gap: 6 },
   summaryRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -438,7 +464,6 @@ const styles = {
     color: "#065F46",
     fontVariantNumeric: "tabular-nums",
   },
-
   ctaBar: { display: "flex", gap: 10, marginTop: 6 },
   cancelBtn: {
     flex: 1,

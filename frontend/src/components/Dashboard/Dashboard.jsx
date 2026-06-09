@@ -9,9 +9,114 @@ import {
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
+// ─── Shared header for both admin and member ───────────────────────────────
+const GroupHeader = () => (
+  <div
+    style={{
+      background: "#064E3B",
+      borderRadius: "0 0 2rem 2rem",
+      padding: "1.5rem 1.5rem 3.75rem",
+      position: "relative",
+      overflow: "hidden",
+    }}
+  >
+    {/* decorative circles */}
+    <div
+      style={{
+        position: "absolute",
+        top: -40,
+        right: -40,
+        width: 180,
+        height: 180,
+        background: "rgba(255,255,255,0.05)",
+        borderRadius: "50%",
+      }}
+    />
+    <div
+      style={{
+        position: "absolute",
+        bottom: -60,
+        left: "30%",
+        width: 240,
+        height: 240,
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: "50%",
+      }}
+    />
+  </div>
+);
+
+// ─── Floating hero fund card that overlaps the header ─────────────────────
+const HeroFundCard = ({ label, amount, sub, icon: Icon }) => (
+  <div
+    style={{
+      padding: "0 1rem",
+      marginTop: "-1.75rem",
+      position: "relative",
+      zIndex: 2,
+    }}
+  >
+    <div
+      style={{
+        background: "#fff",
+        border: "0.5px solid #E5E7EB",
+        borderRadius: 16,
+        padding: "1.25rem 1.5rem",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <div>
+        <p
+          style={{
+            fontSize: 11,
+            color: "#6B7280",
+            fontWeight: 500,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            margin: 0,
+          }}
+        >
+          {label}
+        </p>
+        <p
+          style={{
+            fontSize: 34,
+            fontWeight: 700,
+            color: "#065F46",
+            margin: "4px 0 2px",
+            lineHeight: 1,
+          }}
+        >
+          {amount}
+        </p>
+        <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>{sub}</p>
+      </div>
+      <div
+        style={{
+          background: "#D1FAE5",
+          borderRadius: "50%",
+          width: 50,
+          height: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon color="#065F46" size={22} />
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Main component ────────────────────────────────────────────────────────
 const Dashboard = () => {
   const groupId = localStorage.getItem("selectedGroupId");
   const role = localStorage.getItem("selectedGroupRole");
+
   const [stats, setStats] = useState({
     total_members: 0,
     total_savings: 0,
@@ -70,16 +175,13 @@ const Dashboard = () => {
   const fetchMemberDashboard = useCallback(async () => {
     if (!memberId) return;
 
-    // 1. Get member's savings
     const savingsRes = await api.get(`/savings/member/${groupId}/${memberId}`);
     const mySavings = savingsRes.data.savings || [];
     const myTotalSavings = toNumber(savingsRes.data.total_savings);
 
-    // 2. Get member's loan history (includes repayments)
     const loansRes = await api.get(`/loans/history/${groupId}/${memberId}`);
     const myLoans = loansRes.data || [];
 
-    // 3. Build recent transactions (savings + repayments)
     const savingTransactions = mySavings.map((s) => ({
       member_name: "You",
       type: "saving",
@@ -105,11 +207,9 @@ const Dashboard = () => {
     allTx.sort((a, b) => new Date(b.date) - new Date(a.date));
     const recentTx = allTx.slice(0, 10);
 
-    // 4. Get member's loan summary (outstanding)
     const summaryRes = await api.get(`/loans/summary/${groupId}/${memberId}`);
     const outstanding = toNumber(summaryRes.data.total_outstanding);
 
-    // 5. Group total funds (visible to everyone)
     const fundsRes = await api.get(`/loans/group/funds/${groupId}`);
     const totalFunds = toNumber(fundsRes.data.total_funds);
 
@@ -153,29 +253,24 @@ const Dashboard = () => {
     );
   }
 
-  // Admin Dashboard (unchanged)
+  // ── Admin Dashboard ────────────────────────────────────────────────────
   const AdminDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 shadow-sm border border-emerald-200">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-emerald-700 text-sm font-medium">
-                Total Group Funds
-              </p>
-              <p className="text-3xl font-bold text-emerald-800 mt-2">
-                {formatMoney(stats.total_funds)}
-              </p>
-              <p className="text-xs text-emerald-600 mt-2">
-                Savings + Repayments
-              </p>
-            </div>
-            <div className="bg-emerald-200 p-3 rounded-full">
-              <FiDollarSign className="text-emerald-700" size={28} />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div>
+      {/* Modern hero header */}
+      <GroupHeader />
+
+      {/* Floating total funds card */}
+      <HeroFundCard
+        label="Total Group Funds"
+        amount={formatMoney(stats.total_funds)}
+        sub="Savings + repayments"
+        icon={FiDollarSign}
+      />
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-5 px-4">
+        {/* Members */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Members</p>
@@ -184,27 +279,31 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="bg-emerald-100 p-3 rounded-full">
-              <FiUsers className="text-emerald-600" size={28} />
+              <FiUsers className="text-emerald-600" size={24} />
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+
+        {/* Active loans */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm font-medium">Active Loans</p>
               <p className="text-3xl font-bold text-amber-600 mt-2">
                 {stats.active_loans_count}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 mt-1">
                 Total: {formatMoney(stats.total_loans_amount)}
               </p>
             </div>
             <div className="bg-amber-100 p-3 rounded-full">
-              <FiBookOpen className="text-amber-600" size={28} />
+              <FiBookOpen className="text-amber-600" size={24} />
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+
+        {/* Total savings */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Savings</p>
@@ -213,12 +312,14 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="bg-emerald-100 p-3 rounded-full">
-              <FiTrendingUp className="text-emerald-600" size={28} />
+              <FiTrendingUp className="text-emerald-600" size={24} />
             </div>
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+      {/* Recent activity */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mx-4 mt-5 mb-6">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <FiActivity className="text-amber-500" size={20} />
@@ -249,7 +350,11 @@ const Dashboard = () => {
                   </div>
                   <div className="text-right">
                     <p
-                      className={`font-semibold ${tx.type === "saving" ? "text-emerald-600" : "text-amber-600"}`}
+                      className={`font-semibold ${
+                        tx.type === "saving"
+                          ? "text-emerald-600"
+                          : "text-amber-600"
+                      }`}
                     >
                       {tx.type === "saving" ? "+" : "-"}{" "}
                       {formatMoney(tx.amount)}
@@ -267,53 +372,42 @@ const Dashboard = () => {
     </div>
   );
 
-  // Member Dashboard – shows personal data only
+  // ── Member Dashboard ───────────────────────────────────────────────────
   const MemberDashboard = () => (
-    <div className="space-y-5 max-w-md mx-auto px-2">
-      <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 shadow-sm border border-emerald-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-emerald-700 text-sm font-medium">Group Funds</p>
+    <div className="max-w-md mx-auto">
+      {/* Modern hero header */}
+      <GroupHeader />
 
-            <p className="text-3xl font-bold text-emerald-800 mt-1">
-              {formatMoney(stats.total_funds)}
-            </p>
-            <p className="text-xs text-emerald-600 mt-2">
-              Savings + repayments
-            </p>
-          </div>
-          <div className="bg-emerald-200 p-3 rounded-full">
-            <FiUsers className="text-emerald-700" size={28} />
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+      {/* Floating group funds card */}
+      <HeroFundCard
+        label="Group Funds"
+        amount={formatMoney(stats.total_funds)}
+        sub="Savings + repayments"
+        icon={FiUsers}
+      />
+
+      {/* My savings + my loan */}
+      <div className="grid grid-cols-2 gap-4 mt-4 px-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wide">
-                My Savings
-              </p>
-              <p className="text-xl font-semibold text-emerald-700 mt-1">
-                {formatMoney(stats.total_savings)}
-              </p>
-            </div>
-          </div>
+          <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
+            My Savings
+          </p>
+          <p className="text-xl font-bold text-emerald-700 mt-2">
+            {formatMoney(stats.total_savings)}
+          </p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wide">
-                My Loan
-              </p>
-              <p className="text-xl font-semibold text-amber-600 mt-1">
-                {formatMoney(memberLoanTotal)}
-              </p>
-            </div>
-          </div>
+          <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
+            My Loan
+          </p>
+          <p className="text-xl font-bold text-amber-600 mt-2">
+            {formatMoney(memberLoanTotal)}
+          </p>
         </div>
       </div>
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+
+      {/* Recent activity */}
+      <div className="bg-white rounded-xl mx-4 mt-4 mb-6 p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
           <FiActivity className="text-amber-500" size={18} />
           <h2 className="text-lg font-semibold text-gray-700">
@@ -338,7 +432,11 @@ const Dashboard = () => {
                 </div>
                 <div className="text-right">
                   <p
-                    className={`font-semibold ${tx.type === "saving" ? "text-emerald-600" : "text-amber-600"}`}
+                    className={`font-semibold ${
+                      tx.type === "saving"
+                        ? "text-emerald-600"
+                        : "text-amber-600"
+                    }`}
                   >
                     {tx.type === "saving" ? "+" : "-"} {formatMoney(tx.amount)}
                   </p>
