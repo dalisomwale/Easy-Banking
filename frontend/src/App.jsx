@@ -28,6 +28,7 @@ import LoanRequestForm from "./components/Loans/LoanRequestForm";
 import PendingLoans from "./components/Loans/PendingLoans";
 import AllSavings from "./components/Savings/AllSavings";
 import SplashScreen from "./components/SplashScreen";
+import Profile from "./components/profile/Profile"; // ✅ Import Profile
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -72,22 +73,21 @@ function App() {
           <Route index element={<Navigate to="/app/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="members" element={<MemberList />} />
-          <Route path="members/new" element={<MemberForm />} />{" "}
-          {/* ✅ Add new member form */}
-          <Route path="members/invite" element={<InviteMember />} />{" "}
-          {/* Optional: email invite */}
+          <Route path="members/new" element={<MemberForm />} />
+          <Route path="members/invite" element={<InviteMember />} />
           <Route path="members/edit/:id" element={<MemberForm />} />
           <Route path="members/:id" element={<MemberDetails />} />
           <Route path="savings/add" element={<SavingForm />} />
           <Route path="savings/all" element={<AllSavings />} />
           <Route path="savings/history/:memberId" element={<SavingHistory />} />
           <Route path="loans" element={<LoanList />} />
-          <Route path="loans/pending" element={<PendingLoans />} />{" "}
-          {/* ✅ Pending loans route */}
+          <Route path="loans/pending" element={<PendingLoans />} />
           <Route path="loans/request" element={<LoanRequestForm />} />
           <Route path="loans/:id" element={<LoanDetails />} />
           <Route path="loans/:id/repayment" element={<RepaymentForm />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="profile" element={<Profile />} />{" "}
+          {/* ✅ Profile route */}
         </Route>
 
         {/* Group selection routes – also protected but share same auth */}

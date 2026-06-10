@@ -6,25 +6,14 @@ import {
   FiTrendingUp,
   FiActivity,
   FiBookOpen,
-  FiMoreVertical,
-  FiRefreshCw,
 } from "react-icons/fi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
-// ─── Shared header for both admin and member ───────────────────────────────
-const GroupHeader = ({ onSwitchGroup }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
+// ─── Shared header for both admin and member (no kebab menu) ───────────────
+const GroupHeader = () => {
   const groupName = localStorage.getItem("selectedGroupName") || "My Group";
   const role = localStorage.getItem("selectedGroupRole");
-
-  const toggleMenu = () => setMenuOpen(!menuOpen);
-  const closeMenu = () => setMenuOpen(false);
-
-  const handleSwitchGroup = () => {
-    closeMenu();
-    onSwitchGroup();
-  };
 
   return (
     <div
@@ -60,126 +49,45 @@ const GroupHeader = ({ onSwitchGroup }) => {
         }}
       />
 
-      {/* Group name + kebab menu on same line */}
+      {/* Group name and role */}
       <div
         style={{
           position: "relative",
           zIndex: 2,
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
+          flexDirection: "column",
+          gap: 4,
         }}
       >
-        <div>
-          <p
-            style={{
-              fontSize: 24,
-              fontWeight: 800,
-              color: "#FFFFFF",
-              letterSpacing: "-0.3px",
-              margin: 0,
-              lineHeight: 1.2,
-            }}
-          >
-            {groupName}
-          </p>
-          <p
-            style={{
-              fontSize: 10,
-              fontWeight: 500,
-              color: "#A7F3D0",
-              letterSpacing: "0.04em",
-              marginTop: 6,
-              marginBottom: 0,
-            }}
-          >
-            {role === "admin" ? "Admin's Dashboard" : "Member's Dashboard"}
-          </p>
-        </div>
-
-        {/* Kebab menu button (transparent, no background) */}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={toggleMenu}
-            style={{
-              background: "transparent",
-              border: "none",
-              borderRadius: 0,
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              padding: 0,
-            }}
-          >
-            <FiMoreVertical size={20} color="#A7F3D0" />
-          </button>
-
-          {/* Dropdown menu - now with reduced margin-top and no icon */}
-          {menuOpen && (
-            <>
-              <div
-                onClick={closeMenu}
-                style={{
-                  position: "fixed",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: 10,
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  top: "80%",
-                  right: 20,
-                  marginTop: 2,
-                  background: "#a0d19c",
-                  borderRadius: 5,
-                  minWidth: 100,
-                  zIndex: 20,
-                }}
-              >
-                <button
-                  onClick={handleSwitchGroup}
-                  style={{
-                    width: "100%",
-                    padding: "6px 8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 4,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 200,
-                    color: "#000000",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#F3F4F6")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  {/* Icon removed, only text remains */}
-                  <span>Switch Groups</span>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        <p
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            letterSpacing: "-0.3px",
+            margin: 0,
+            lineHeight: 1.2,
+          }}
+        >
+          {groupName}
+        </p>
+        <p
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "#A7F3D0",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            margin: 0,
+          }}
+        >
+          {role === "admin" ? "Admin Dashboard" : "Member Dashboard"}
+        </p>
       </div>
     </div>
   );
 };
+
 // ─── Floating hero fund card that overlaps the header ─────────────────────
 const HeroFundCard = ({ label, amount, sub, icon: Icon }) => (
   <div
@@ -271,10 +179,6 @@ const Dashboard = () => {
   };
 
   const formatMoney = (value) => `K${value.toFixed(2)}`;
-
-  const handleSwitchGroup = () => {
-    navigate("/group-select");
-  };
 
   // Helper to get member_id if not already stored
   useEffect(() => {
@@ -395,7 +299,7 @@ const Dashboard = () => {
   // ── Admin Dashboard ────────────────────────────────────────────────────
   const AdminDashboard = () => (
     <div>
-      <GroupHeader onSwitchGroup={handleSwitchGroup} />
+      <GroupHeader />
 
       <HeroFundCard
         label="Total Group Funds"
@@ -509,7 +413,7 @@ const Dashboard = () => {
   // ── Member Dashboard ───────────────────────────────────────────────────
   const MemberDashboard = () => (
     <div className="max-w-md mx-auto">
-      <GroupHeader onSwitchGroup={handleSwitchGroup} />
+      <GroupHeader />
 
       <HeroFundCard
         label="Group Funds"
