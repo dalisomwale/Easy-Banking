@@ -10,6 +10,7 @@ import {
   FiLogOut,
   FiUsers as FiGroup,
   FiUser,
+  FiShare2,
 } from "react-icons/fi";
 
 // Bank building logo component (orange outline + fill)
@@ -80,7 +81,6 @@ const Layout = () => {
   // Build navigation items based on role
   let navItems = [{ path: "/app/dashboard", label: "Home", icon: FiHome }];
 
-  // Only admins see the Members tab
   if (isAdmin) {
     navItems.push({ path: "/app/members", label: "Members", icon: FiUsers });
   }
@@ -89,12 +89,14 @@ const Layout = () => {
     navItems.push(
       { path: "/app/savings/all", label: "Savings", icon: FiPocket },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
+      { path: "/app/sharings", label: "Sharings", icon: FiShare2 },
       { path: "/app/reports", label: "Reports", icon: FiBarChart2 },
     );
   } else {
     navItems.push(
       { path: "/app/savings/add", label: "Savings", icon: FiPocket },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
+      { path: "/app/sharings", label: "Sharings", icon: FiShare2 },
     );
   }
   navItems.push({ path: "/app/profile", label: "Profile", icon: FiUser });
@@ -105,7 +107,6 @@ const Layout = () => {
       <div
         style={{ minHeight: "100vh", background: "#F8F9FB", paddingBottom: 72 }}
       >
-        {/* Mobile header — dark glass effect */}
         <header
           style={{
             background: "rgba(4, 56, 44, 0.85)",
@@ -155,7 +156,6 @@ const Layout = () => {
           <Outlet />
         </main>
 
-        {/* Bottom nav */}
         <nav
           style={{
             position: "fixed",
@@ -225,7 +225,6 @@ const Layout = () => {
   /* ── DESKTOP ── */
   return (
     <div style={{ minHeight: "100vh", background: "#F8F9FB", display: "flex" }}>
-      {/* Sidebar */}
       <aside
         style={{
           position: "fixed",
@@ -240,7 +239,6 @@ const Layout = () => {
           boxShadow: "2px 0 16px rgba(0,0,0,0.2)",
         }}
       >
-        {/* Logo + brand */}
         <div
           style={{
             padding: "24px 20px 20px",
@@ -277,7 +275,6 @@ const Layout = () => {
           </p>
         </div>
 
-        {/* Nav links */}
         <nav style={{ flex: 1, padding: "16px 0" }}>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -319,7 +316,6 @@ const Layout = () => {
           })}
         </nav>
 
-        {/* Footer */}
         <div
           style={{
             padding: "16px 20px",
@@ -373,7 +369,6 @@ const Layout = () => {
         </div>
       </aside>
 
-      {/* Main content */}
       <div
         style={{
           flex: 1,
@@ -382,7 +377,6 @@ const Layout = () => {
           flexDirection: "column",
         }}
       >
-        {/* Desktop top bar (dark blur) */}
         <div
           style={{
             background: "rgba(4, 56, 44, 0.72)",

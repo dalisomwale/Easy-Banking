@@ -28,7 +28,8 @@ import LoanRequestForm from "./components/Loans/LoanRequestForm";
 import PendingLoans from "./components/Loans/PendingLoans";
 import AllSavings from "./components/Savings/AllSavings";
 import SplashScreen from "./components/SplashScreen";
-import Profile from "./components/profile/Profile"; // ✅ Import Profile
+import Profile from "./components/profile/Profile";
+import Sharings from "./components/Sharings/Sharings"; // ✅ Import Sharings
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -86,8 +87,9 @@ function App() {
           <Route path="loans/:id" element={<LoanDetails />} />
           <Route path="loans/:id/repayment" element={<RepaymentForm />} />
           <Route path="reports" element={<Reports />} />
-          <Route path="profile" element={<Profile />} />{" "}
-          {/* ✅ Profile route */}
+          <Route path="profile" element={<Profile />} />
+          <Route path="sharings" element={<Sharings />} />{" "}
+          {/* ✅ Sharings route */}
         </Route>
 
         {/* Group selection routes – also protected but share same auth */}
