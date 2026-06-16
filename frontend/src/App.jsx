@@ -29,8 +29,9 @@ import PendingLoans from "./components/Loans/PendingLoans";
 import AllSavings from "./components/Savings/AllSavings";
 import SplashScreen from "./components/SplashScreen";
 import Profile from "./components/profile/Profile";
-import Sharings from "./components/Sharings/Sharings";
-import Fines from "./components/Fines/Fines"; // NEW
+import Fines from "./components/Fines/Fines";
+import ShareOut from "./components/ShareOut/ShareOut";
+import ShareOuts from "./components/ShareOut/ShareOuts";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -89,8 +90,10 @@ function App() {
           <Route path="loans/:id/repayment" element={<RepaymentForm />} />
           <Route path="reports" element={<Reports />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="sharings" element={<Sharings />} />
-          <Route path="fines" element={<Fines />} /> {/* NEW */}
+
+          <Route path="fines" element={<Fines />} />
+          <Route path="share-out" element={<ShareOut />} />
+          <Route path="share-outs" element={<ShareOuts />} />
         </Route>
 
         <Route

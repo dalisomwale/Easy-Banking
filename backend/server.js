@@ -3,7 +3,6 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 
-// Load env vars
 dotenv.config();
 
 const app = express();
@@ -20,7 +19,8 @@ const memberRoutes = require("./routes/memberRoutes");
 const savingRoutes = require("./routes/savingRoutes");
 const loanRoutes = require("./routes/loanRoutes");
 const reportRoutes = require("./routes/reportRoutes");
-const fineRoutes = require("./routes/fineRoutes"); // NEW
+const fineRoutes = require("./routes/fineRoutes");
+const shareOutRoutes = require("./routes/shareOutRoutes");
 
 // Mount routes
 app.use("/api/auth", authRoutes);
@@ -29,7 +29,8 @@ app.use("/api/members", memberRoutes);
 app.use("/api/savings", savingRoutes);
 app.use("/api/loans", loanRoutes);
 app.use("/api/reports", reportRoutes);
-app.use("/api/fines", fineRoutes); // NEW
+app.use("/api/fines", fineRoutes);
+app.use("/api/share-out", shareOutRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

@@ -10,7 +10,8 @@ import {
   FiUsers as FiGroup,
   FiUser,
   FiShare2,
-  FiAlertTriangle, // NEW
+  FiAlertTriangle,
+  FiPieChart,
 } from "react-icons/fi";
 
 const BankLogo = () => (
@@ -88,16 +89,16 @@ const Layout = () => {
     navItems.push(
       { path: "/app/savings/all", label: "Savings", icon: FiDollarSign },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
-      { path: "/app/fines", label: "Fines", icon: FiAlertTriangle }, // NEW
-      { path: "/app/sharings", label: "Sharings", icon: FiShare2 },
+      { path: "/app/fines", label: "Fines", icon: FiAlertTriangle },
+      { path: "/app/share-outs", label: "Share-Outs", icon: FiPieChart },
       { path: "/app/reports", label: "Reports", icon: FiBarChart2 },
     );
   } else {
     navItems.push(
       { path: "/app/savings/add", label: "Savings", icon: FiDollarSign },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
-      { path: "/app/fines", label: "Fines", icon: FiAlertTriangle }, // NEW
-      { path: "/app/sharings", label: "Sharings", icon: FiShare2 },
+      { path: "/app/fines", label: "Fines", icon: FiAlertTriangle },
+      { path: "/app/share-out", label: "Share-Out", icon: FiPieChart },
     );
   }
   navItems.push({ path: "/app/profile", label: "Profile", icon: FiUser });
