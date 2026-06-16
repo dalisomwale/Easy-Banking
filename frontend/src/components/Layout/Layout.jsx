@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { FiPocket, FiTrendingUp } from "react-icons/fi";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   FiHome,
@@ -11,9 +10,9 @@ import {
   FiUsers as FiGroup,
   FiUser,
   FiShare2,
+  FiAlertTriangle, // NEW
 } from "react-icons/fi";
 
-// Bank building logo component (orange outline + fill)
 const BankLogo = () => (
   <svg
     width="24"
@@ -87,15 +86,17 @@ const Layout = () => {
 
   if (isAdmin) {
     navItems.push(
-      { path: "/app/savings/all", label: "Savings", icon: FiPocket },
+      { path: "/app/savings/all", label: "Savings", icon: FiDollarSign },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
+      { path: "/app/fines", label: "Fines", icon: FiAlertTriangle }, // NEW
       { path: "/app/sharings", label: "Sharings", icon: FiShare2 },
       { path: "/app/reports", label: "Reports", icon: FiBarChart2 },
     );
   } else {
     navItems.push(
-      { path: "/app/savings/add", label: "Savings", icon: FiPocket },
+      { path: "/app/savings/add", label: "Savings", icon: FiDollarSign },
       { path: "/app/loans", label: "Loans", icon: FiBookOpen },
+      { path: "/app/fines", label: "Fines", icon: FiAlertTriangle }, // NEW
       { path: "/app/sharings", label: "Sharings", icon: FiShare2 },
     );
   }
@@ -410,19 +411,6 @@ const Layout = () => {
       </div>
     </div>
   );
-};
-
-const mobileHeaderBtn = {
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(167,243,208,0.3)",
-  borderRadius: 10,
-  width: 36,
-  height: 36,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  transition: "all 0.2s ease",
 };
 
 const desktopFooterBtn = {

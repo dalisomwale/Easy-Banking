@@ -6,15 +6,16 @@ import {
   FiTrendingUp,
   FiActivity,
   FiBookOpen,
+  FiAlertTriangle,
+  FiPercent,
 } from "react-icons/fi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
-// ─── Shared header for both admin and member (no kebab menu) ───────────────
+// ─── Shared header ──────────────────────────────────────────────────────
 const GroupHeader = () => {
   const groupName = localStorage.getItem("selectedGroupName") || "My Group";
   const role = localStorage.getItem("selectedGroupRole");
-
   return (
     <div
       style={{
@@ -25,7 +26,6 @@ const GroupHeader = () => {
         overflow: "hidden",
       }}
     >
-      {/* decorative circles */}
       <div
         style={{
           position: "absolute",
@@ -48,8 +48,6 @@ const GroupHeader = () => {
           borderRadius: "50%",
         }}
       />
-
-      {/* Group name and role */}
       <div
         style={{
           position: "relative",
@@ -88,7 +86,7 @@ const GroupHeader = () => {
   );
 };
 
-// ─── Floating hero fund card that overlaps the header ─────────────────────
+// ─── Floating hero fund card ───────────────────────────────────────────
 const HeroFundCard = ({ label, amount, sub, icon: Icon }) => (
   <div
     style={{
@@ -154,7 +152,7 @@ const HeroFundCard = ({ label, amount, sub, icon: Icon }) => (
   </div>
 );
 
-// ─── Main component ────────────────────────────────────────────────────────
+// ─── Main component ────────────────────────────────────────────────────
 const Dashboard = () => {
   const navigate = useNavigate();
   const groupId = localStorage.getItem("selectedGroupId");
@@ -170,8 +168,21 @@ const Dashboard = () => {
     recent_transactions: [],
   });
   const [memberLoanTotal, setMemberLoanTotal] = useState(0);
+  const [fineSummary, setFineSummary] = useState({
+    total_fines: 0,
+    paid_fines: 0,
+    outstanding: 0,
+  });
+  const [adminFineStats, setAdminFineStats] = useState({
+    total_issued: 0,
+    total_paid: 0,
+    outstanding: 0,
+    members_fined: 0,
+  });
+  const [totalInterest, setTotalInterest] = useState(0);
   const [loading, setLoading] = useState(true);
   const [memberId, setMemberId] = useState(localStorage.getItem("member_id"));
+  const [totalMembers, setTotalMembers] = useState(0);
 
   const toNumber = (val) => {
     const num = Number(val);
@@ -180,7 +191,6 @@ const Dashboard = () => {
 
   const formatMoney = (value) => `K${value.toFixed(2)}`;
 
-  // Helper to get member_id if not already stored
   useEffect(() => {
     const fetchMemberId = async () => {
       if (!groupId || role !== "member") return;
@@ -196,7 +206,6 @@ const Dashboard = () => {
     fetchMemberId();
   }, [groupId, role, memberId]);
 
-  // Admin dashboard data fetch (memoized)
   const fetchAdminDashboard = useCallback(async () => {
     const res = await api.get(`/reports/dashboard/${groupId}`);
     const data = res.data;
@@ -212,11 +221,28 @@ const Dashboard = () => {
         amount: toNumber(tx.amount),
       })),
     });
+
+    const fineRes = await api.get(`/fines/stats/${groupId}`);
+    setAdminFineStats({
+      total_issued: toNumber(fineRes.data.total_issued),
+      total_paid: toNumber(fineRes.data.total_paid),
+      outstanding: toNumber(fineRes.data.outstanding),
+      members_fined: toNumber(fineRes.data.members_fined),
+    });
+
+    const interestRes = await api.get(`/loans/interest/${groupId}`);
+    setTotalInterest(toNumber(interestRes.data.total_interest));
   }, [groupId]);
 
-  // Member dashboard data fetch (memoized)
   const fetchMemberDashboard = useCallback(async () => {
     if (!memberId) return;
+
+    try {
+      const membersRes = await api.get(`/members/${groupId}`);
+      setTotalMembers(membersRes.data.length);
+    } catch (err) {
+      console.error("Failed to fetch members count:", err);
+    }
 
     const savingsRes = await api.get(`/savings/member/${groupId}/${memberId}`);
     const mySavings = savingsRes.data.savings || [];
@@ -256,6 +282,13 @@ const Dashboard = () => {
     const fundsRes = await api.get(`/loans/group/funds/${groupId}`);
     const totalFunds = toNumber(fundsRes.data.total_funds);
 
+    const fineRes = await api.get(`/fines/summary/${groupId}/${memberId}`);
+    setFineSummary({
+      total_fines: toNumber(fineRes.data.total_fines),
+      paid_fines: toNumber(fineRes.data.paid_fines),
+      outstanding: toNumber(fineRes.data.outstanding),
+    });
+
     setMemberLoanTotal(outstanding);
     setStats({
       total_members: 0,
@@ -268,7 +301,6 @@ const Dashboard = () => {
     });
   }, [groupId, memberId]);
 
-  // Main load effect
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -300,7 +332,6 @@ const Dashboard = () => {
   const AdminDashboard = () => (
     <div>
       <GroupHeader />
-
       <HeroFundCard
         label="Total Group Funds"
         amount={formatMoney(stats.total_funds)}
@@ -308,9 +339,8 @@ const Dashboard = () => {
         icon={FiDollarSign}
       />
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-5 px-4">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5 px-4">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Members</p>
@@ -318,30 +348,10 @@ const Dashboard = () => {
                 {stats.total_members}
               </p>
             </div>
-            <div className="bg-emerald-100 p-3 rounded-full">
-              <FiUsers className="text-emerald-600" size={24} />
-            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Active Loans</p>
-              <p className="text-3xl font-bold text-amber-600 mt-2">
-                {stats.active_loans_count}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Total: {formatMoney(stats.total_loans_amount)}
-              </p>
-            </div>
-            <div className="bg-amber-100 p-3 rounded-full">
-              <FiBookOpen className="text-amber-600" size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Savings</p>
@@ -349,14 +359,63 @@ const Dashboard = () => {
                 {formatMoney(stats.total_savings)}
               </p>
             </div>
-            <div className="bg-emerald-100 p-3 rounded-full">
-              <FiTrendingUp className="text-emerald-600" size={24} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Loans</p>
+              <p className="text-3xl font-bold text-amber-600 mt-2">
+                {stats.active_loans_count}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Amount: {formatMoney(stats.total_loans_amount)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Fines</p>
+              <p className="text-3xl font-bold text-red-600 mt-2">
+                {formatMoney(adminFineStats.total_issued)}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Paid: {formatMoney(adminFineStats.total_paid)} · Outstanding:{" "}
+                {formatMoney(adminFineStats.outstanding)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">
+                Total Interest
+              </p>
+              <p className="text-3xl font-bold text-indigo-600 mt-2">
+                {formatMoney(totalInterest)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Members Fined</p>
+              <p className="text-3xl font-bold text-gray-700 mt-2">
+                {adminFineStats.members_fined}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent activity */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mx-4 mt-5 mb-6">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-2">
@@ -410,7 +469,7 @@ const Dashboard = () => {
     </div>
   );
 
-  // ── Member Dashboard ───────────────────────────────────────────────────
+  // ── Member Dashboard ── (Z‑layout: Savings|Loan on top, Fines|Total Members below)
   const MemberDashboard = () => (
     <div className="max-w-md mx-auto">
       <GroupHeader />
@@ -422,23 +481,52 @@ const Dashboard = () => {
         icon={FiUsers}
       />
 
-      {/* My savings + my loan */}
-      <div className="grid grid-cols-2 gap-4 mt-4 px-4">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
-            My Savings
-          </p>
-          <p className="text-xl font-bold text-emerald-700 mt-2">
-            {formatMoney(stats.total_savings)}
-          </p>
+      <div className="mt-4 px-4">
+        {/* Top row: Savings | Loan */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
+              Savings
+            </p>
+            <p className="text-2xl font-bold text-emerald-700 mt-1">
+              {formatMoney(stats.total_savings)}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
+              Loan
+            </p>
+            <p className="text-2xl font-bold text-amber-600 mt-1">
+              {formatMoney(memberLoanTotal)}
+            </p>
+            {memberLoanTotal > 0 ? (
+              <p className="text-xs text-amber-500 mt-0.5">Active</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-0.5"></p>
+            )}
+          </div>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
-            My Loan
-          </p>
-          <p className="text-xl font-bold text-amber-600 mt-2">
-            {formatMoney(memberLoanTotal)}
-          </p>
+
+        {/* Bottom row: Fines | Total Members */}
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
+              Fines
+            </p>
+            <p className="text-2xl font-bold text-red-600 mt-1">
+              {formatMoney(fineSummary.total_fines)}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">
+              Members
+            </p>
+            <p className="text-2xl font-bold text-gray-700 mt-1">
+              {totalMembers}
+            </p>
+          </div>
         </div>
       </div>
 

@@ -29,7 +29,8 @@ import PendingLoans from "./components/Loans/PendingLoans";
 import AllSavings from "./components/Savings/AllSavings";
 import SplashScreen from "./components/SplashScreen";
 import Profile from "./components/profile/Profile";
-import Sharings from "./components/Sharings/Sharings"; // ✅ Import Sharings
+import Sharings from "./components/Sharings/Sharings";
+import Fines from "./components/Fines/Fines"; // NEW
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -62,7 +63,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected routes (require authentication) */}
+        {/* Protected routes */}
         <Route
           path="/app"
           element={
@@ -88,11 +89,10 @@ function App() {
           <Route path="loans/:id/repayment" element={<RepaymentForm />} />
           <Route path="reports" element={<Reports />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="sharings" element={<Sharings />} />{" "}
-          {/* ✅ Sharings route */}
+          <Route path="sharings" element={<Sharings />} />
+          <Route path="fines" element={<Fines />} /> {/* NEW */}
         </Route>
 
-        {/* Group selection routes – also protected but share same auth */}
         <Route
           path="/group-select"
           element={
@@ -118,7 +118,6 @@ function App() {
           }
         />
 
-        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
