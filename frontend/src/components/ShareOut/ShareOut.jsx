@@ -198,7 +198,9 @@ const ShareOut = () => {
       <HeroCard
         label="Expected Share-Out"
         amount={formatMoney(summary.expectedShareOut)}
-        sub={`Status: ${summary.paymentStatus}`}
+        sub={
+          summary.cycleName ? `Cycle: ${summary.cycleName}` : "No active cycle"
+        }
         icon={FiPieChart}
       />
 
@@ -260,7 +262,9 @@ const ShareOut = () => {
                 ? "bg-green-100 text-green-700"
                 : summary.paymentStatus === "processing"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-amber-100 text-amber-700"
+                  : summary.paymentStatus === "No cycle"
+                    ? "bg-gray-100 text-gray-700"
+                    : "bg-amber-100 text-amber-700"
             }`}
           >
             {summary.paymentStatus === "paid"
@@ -269,7 +273,17 @@ const ShareOut = () => {
                 ? "Processing"
                 : summary.paymentStatus === "No cycle"
                   ? "No Cycle"
-                  : "Pending"}
+                  : summary.paymentStatus === "active"
+                    ? "Active"
+                    : summary.paymentStatus === "closed"
+                      ? "Closed"
+                      : summary.paymentStatus === "calculated"
+                        ? "Calculated"
+                        : summary.paymentStatus === "approved"
+                          ? "Approved"
+                          : summary.paymentStatus === "pending"
+                            ? "Pending"
+                            : summary.paymentStatus}
           </div>
         </div>
       </div>

@@ -349,7 +349,6 @@ exports.calculate = async (req, res) => {
 // ─── Admin: Recalculate ──────────────────────────────────────────────
 
 exports.recalculate = async (req, res) => {
-  // For safety, only allow recalculation if status is 'calculated' or 'closed'
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -451,7 +450,7 @@ exports.markPayments = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    const { memberIds } = req.body; // array of member IDs to mark as paid
+    const { memberIds } = req.body;
 
     const [cycle] = await db.query(
       "SELECT group_id, name FROM share_out_cycles WHERE id = ?",
@@ -536,7 +535,6 @@ exports.completeCycle = async (req, res) => {
         .json({ message: "Only admins can complete cycles" });
     }
 
-    // Check all share-outs are paid
     const [pending] = await db.query(
       "SELECT COUNT(*) as count FROM share_outs WHERE cycle_id = ? AND payment_status != 'paid'",
       [id],
@@ -642,7 +640,7 @@ exports.getDashboardStats = async (req, res) => {
     );
     const currentCycle = activeCycle.length ? activeCycle[0] : null;
 
-    // Totals (from all cycles or global? We'll show global totals for the group)
+    // Totals (all time)
     const [savingsRes] = await db.query(
       "SELECT COALESCE(SUM(amount), 0) as total FROM savings WHERE group_id = ?",
       [groupId],
@@ -674,7 +672,6 @@ exports.getDashboardStats = async (req, res) => {
       ? toNumber(eligibleCount[0]?.count)
       : 0;
 
-    // Latest share-out total (from latest calculated/approved/paid cycle)
     const [latestCycle] = await db.query(
       `SELECT total_fund 
        FROM share_out_cycles 
@@ -703,7 +700,7 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
-// ─── Member: Get my share-out summary ────────────────────────────────
+// ─── Member: Get my share-out summary (improved) ──────────────────────
 
 exports.getMemberSummary = async (req, res) => {
   try {
@@ -712,17 +709,21 @@ exports.getMemberSummary = async (req, res) => {
 
     const memberId = await getMemberId(userId, groupId);
     if (!memberId) {
-      return res.status(404).json({ message: "Member not found" });
+      return res
+        .status(404)
+        .json({
+          message: "Member profile not found. Please contact your group admin.",
+        });
     }
 
-    // Total savings (all time)
+    // 1. Total savings for this member (all time)
     const [savingsRes] = await db.query(
       "SELECT COALESCE(SUM(amount), 0) as total FROM savings WHERE member_id = ? AND group_id = ?",
       [memberId, groupId],
     );
     const totalSavings = toNumber(savingsRes[0]?.total);
 
-    // Total group savings
+    // 2. Total group savings (all time)
     const [groupSavingsRes] = await db.query(
       "SELECT COALESCE(SUM(amount), 0) as total FROM savings WHERE group_id = ?",
       [groupId],
@@ -731,7 +732,7 @@ exports.getMemberSummary = async (req, res) => {
     const ownershipPct =
       groupSavings > 0 ? (totalSavings / groupSavings) * 100 : 0;
 
-    // Outstanding loan
+    // 3. Outstanding loan balance
     const [loanSummary] = await db.query(
       `SELECT COALESCE(SUM(remaining), 0) as total_outstanding
        FROM (
@@ -745,29 +746,44 @@ exports.getMemberSummary = async (req, res) => {
     );
     const outstandingLoan = toNumber(loanSummary[0]?.total_outstanding);
 
-    // Latest share-out data
-    const [latestShareOut] = await db.query(
-      `SELECT s.gross_share_out, s.net_share_out, s.profit_earned, s.payment_status, s.paid_date,
-              c.status as cycle_status, c.name as cycle_name
-       FROM share_outs s
-       JOIN share_out_cycles c ON s.cycle_id = c.id
-       WHERE s.member_id = ? AND c.group_id = ? AND c.status IN ('calculated','approved','paid','completed')
-       ORDER BY c.created_at DESC LIMIT 1`,
-      [memberId, groupId],
+    // 4. Get the latest cycle that is not 'draft' (active, closed, calculated, etc.)
+    const [latestCycle] = await db.query(
+      `SELECT id, name, status, start_date, end_date
+       FROM share_out_cycles 
+       WHERE group_id = ? AND status != 'draft'
+       ORDER BY created_at DESC LIMIT 1`,
+      [groupId],
     );
 
+    let cycleName = null;
+    let cycleStatus = "No cycle";
     let expectedShareOut = 0;
     let profitEarned = 0;
     let paymentStatus = "No cycle";
-    let cycleName = null;
     let paidDate = null;
 
-    if (latestShareOut.length) {
-      expectedShareOut = toNumber(latestShareOut[0].net_share_out);
-      profitEarned = toNumber(latestShareOut[0].profit_earned);
-      paymentStatus = latestShareOut[0].payment_status || "pending";
-      cycleName = latestShareOut[0].cycle_name;
-      paidDate = latestShareOut[0].paid_date;
+    if (latestCycle.length) {
+      const cycle = latestCycle[0];
+      cycleName = cycle.name;
+      cycleStatus = cycle.status;
+
+      // Check if there is a share-out record for this cycle and this member
+      const [shareOut] = await db.query(
+        `SELECT s.gross_share_out, s.net_share_out, s.profit_earned, s.payment_status, s.paid_date
+         FROM share_outs s
+         WHERE s.cycle_id = ? AND s.member_id = ?`,
+        [cycle.id, memberId],
+      );
+
+      if (shareOut.length) {
+        expectedShareOut = toNumber(shareOut[0].net_share_out);
+        profitEarned = toNumber(shareOut[0].profit_earned);
+        paymentStatus = shareOut[0].payment_status || "pending";
+        paidDate = shareOut[0].paid_date;
+      } else {
+        // No share-out record yet – use cycle status as payment status
+        paymentStatus = cycleStatus;
+      }
     }
 
     res.json({
@@ -797,7 +813,11 @@ exports.getMemberHistory = async (req, res) => {
 
     const memberId = await getMemberId(userId, groupId);
     if (!memberId) {
-      return res.status(404).json({ message: "Member not found" });
+      return res
+        .status(404)
+        .json({
+          message: "Member profile not found. Please contact your group admin.",
+        });
     }
 
     const [history] = await db.query(
