@@ -1,12 +1,13 @@
 const express = require("express");
 const {
   createCycle,
-  openCycle,
+  activateCycle,
   closeCycle,
   calculate,
   recalculate,
   approve,
-  markAsPaid,
+  markPayments,
+  completeCycle,
   getCycles,
   getCycleDetails,
   getDashboardStats,
@@ -21,12 +22,13 @@ router.use(protect);
 
 // Admin routes
 router.post("/cycles", createCycle);
-router.put("/cycles/open/:id", openCycle);
+router.put("/cycles/activate/:id", activateCycle);
 router.put("/cycles/close/:id", closeCycle);
 router.post("/cycles/calculate/:id", calculate);
 router.post("/cycles/recalculate/:id", recalculate);
 router.put("/cycles/approve/:id", approve);
-router.put("/cycles/paid/:id", markAsPaid);
+router.put("/cycles/payments/:id", markPayments);
+router.put("/cycles/complete/:id", completeCycle);
 router.get("/cycles/:groupId", getCycles);
 router.get("/cycles/details/:cycleId/:groupId", getCycleDetails);
 router.get("/dashboard/:groupId", getDashboardStats);

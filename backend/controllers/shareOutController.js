@@ -18,21 +18,17 @@ const getMemberId = async (userId, groupId) => {
   return rows.length ? rows[0].id : null;
 };
 
+// Helper: Log audit action
+const logAction = async (cycleId, userId, action, details = null) => {
+  await db.query(
+    "INSERT INTO share_out_audit_logs (cycle_id, user_id, action, details) VALUES (?, ?, ?, ?)",
+    [cycleId, userId, action, details],
+  );
+};
+
 // ─── Helper: Calculate share-out for a cycle ──────────────────────────
 
 const calculateCycleShareOut = async (cycleId, groupId) => {
-  // Fetch all members with their total savings
-  const [members] = await db.query(
-    `SELECT m.id, m.fullname,
-            COALESCE(SUM(s.amount), 0) as total_savings
-     FROM members m
-     LEFT JOIN savings s ON s.member_id = m.id AND s.group_id = ?
-     WHERE m.group_id = ?
-     GROUP BY m.id`,
-    [groupId, groupId],
-  );
-
-  // Get cycle details
   const [cycle] = await db.query(
     "SELECT * FROM share_out_cycles WHERE id = ? AND group_id = ?",
     [cycleId, groupId],
@@ -40,61 +36,92 @@ const calculateCycleShareOut = async (cycleId, groupId) => {
   if (!cycle.length) throw new Error("Cycle not found");
   const cycleData = cycle[0];
 
-  // Total group savings
-  const totalGroupSavings = members.reduce(
-    (sum, m) => sum + toNumber(m.total_savings),
-    0,
-  );
+  const startDate = cycleData.start_date;
+  const endDate = cycleData.end_date || new Date().toISOString().split("T")[0];
 
-  // Fetch total interest from loans (for this group)
+  // 1. Total Savings in cycle
+  const [savingsResult] = await db.query(
+    `SELECT COALESCE(SUM(amount), 0) as total_savings 
+     FROM savings 
+     WHERE group_id = ? AND date BETWEEN ? AND ?`,
+    [groupId, startDate, endDate],
+  );
+  const totalSavings = toNumber(savingsResult[0]?.total_savings);
+
+  // 2. Total Loan Interest from loans issued in cycle
   const [interestResult] = await db.query(
-    "SELECT COALESCE(SUM(amount * interest_rate / 100), 0) as total_interest FROM loans WHERE group_id = ?",
-    [groupId],
+    `SELECT COALESCE(SUM(amount * interest_rate / 100), 0) as total_interest 
+     FROM loans 
+     WHERE group_id = ? AND issue_date BETWEEN ? AND ?`,
+    [groupId, startDate, endDate],
   );
   const totalInterest = toNumber(interestResult[0]?.total_interest);
 
-  // Fetch total fines collected (paid fines)
+  // 3. Total Fines paid in cycle
   const [finesResult] = await db.query(
-    "SELECT COALESCE(SUM(amount), 0) as total_fines FROM fines WHERE group_id = ? AND status = 'paid'",
-    [groupId],
+    `SELECT COALESCE(SUM(amount), 0) as total_fines 
+     FROM fines 
+     WHERE group_id = ? AND status = 'paid' AND paid_date BETWEEN ? AND ?`,
+    [groupId, startDate, endDate],
   );
   const totalFines = toNumber(finesResult[0]?.total_fines);
 
-  // Total Fund = Savings + Interest + Fines
-  const totalFund = totalGroupSavings + totalInterest + totalFines;
+  const totalFund = totalSavings + totalInterest + totalFines;
 
-  // Update cycle with calculated totals
+  // Update cycle totals
   await db.query(
     `UPDATE share_out_cycles 
      SET total_savings = ?, total_interest = ?, total_fines = ?, total_fund = ? 
      WHERE id = ?`,
-    [totalGroupSavings, totalInterest, totalFines, totalFund, cycleId],
+    [totalSavings, totalInterest, totalFines, totalFund, cycleId],
   );
 
-  // Delete existing share-outs for this cycle (if any)
+  // Delete existing share-outs
   await db.query("DELETE FROM share_outs WHERE cycle_id = ?", [cycleId]);
 
-  // Insert share-outs for each member
-  if (totalGroupSavings > 0) {
+  // Get all members with savings and outstanding loans
+  const [members] = await db.query(
+    `SELECT m.id, m.fullname,
+            COALESCE(SUM(s.amount), 0) as total_savings,
+            COALESCE(
+              (SELECT SUM(remaining) FROM (
+                SELECT (l.amount + (l.amount * l.interest_rate / 100)) - COALESCE(SUM(r.amount_paid), 0) as remaining
+                FROM loans l
+                LEFT JOIN repayments r ON l.id = r.loan_id
+                WHERE l.member_id = m.id AND l.group_id = ? AND l.status = 'active'
+                GROUP BY l.id
+              ) AS loan_balances
+            ), 0) as outstanding_loan
+     FROM members m
+     LEFT JOIN savings s ON s.member_id = m.id AND s.group_id = ? AND s.date BETWEEN ? AND ?
+     WHERE m.group_id = ?
+     GROUP BY m.id`,
+    [groupId, groupId, startDate, endDate, groupId],
+  );
+
+  if (totalSavings > 0) {
     for (const member of members) {
       const savings = toNumber(member.total_savings);
-      const ownershipPct = (savings / totalGroupSavings) * 100;
-      const profitEarned = (ownershipPct / 100) * totalInterest; // profit = share of interest
-      // Share-out = savings + profit + (share of fines? Usually fines are not distributed as profit, they are added to fund but not returned? The spec says "Fine Contributions Earned" – so we include fines as part of profit? The example given: Total Fund = Savings + Interest + Fines, so yes fines are part of the fund and distributed proportionally.
-      // So share-out amount = (ownershipPct/100) * totalFund
-      const shareOutAmount = (ownershipPct / 100) * totalFund;
+      const outstandingLoan = toNumber(member.outstanding_loan);
+      const ownershipPct = (savings / totalSavings) * 100;
+      const grossShareOut = (ownershipPct / 100) * totalFund;
+      const profitEarned = grossShareOut - savings;
+      const netShareOut = Math.max(0, grossShareOut - outstandingLoan);
 
       await db.query(
         `INSERT INTO share_outs 
-         (cycle_id, member_id, savings_amount, ownership_percentage, profit_earned, share_out_amount, payment_status)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (cycle_id, member_id, savings_amount, ownership_percentage, outstanding_loan,
+          gross_share_out, net_share_out, profit_earned, payment_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           cycleId,
           member.id,
           savings,
           ownershipPct,
+          outstandingLoan,
+          grossShareOut,
+          netShareOut,
           profitEarned,
-          shareOutAmount,
           "pending",
         ],
       );
@@ -108,7 +135,7 @@ const calculateCycleShareOut = async (cycleId, groupId) => {
   );
 
   return {
-    total_savings: totalGroupSavings,
+    total_savings: totalSavings,
     total_interest: totalInterest,
     total_fines: totalFines,
     total_fund: totalFund,
@@ -119,7 +146,15 @@ const calculateCycleShareOut = async (cycleId, groupId) => {
 
 exports.createCycle = async (req, res) => {
   try {
-    const { groupId, name, start_date, end_date } = req.body;
+    const {
+      groupId,
+      name,
+      description,
+      start_date,
+      end_date,
+      share_out_date,
+      notes,
+    } = req.body;
     const userId = req.user.id;
 
     if (!name || !start_date) {
@@ -132,12 +167,43 @@ exports.createCycle = async (req, res) => {
       return res.status(403).json({ message: "Only admins can create cycles" });
     }
 
+    // Check if there's already an active cycle
+    const [activeCycle] = await db.query(
+      "SELECT id FROM share_out_cycles WHERE group_id = ? AND status = 'active'",
+      [groupId],
+    );
+    if (activeCycle.length) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "There is already an active cycle. Please complete it first.",
+        });
+    }
+
     const [result] = await db.query(
       `INSERT INTO share_out_cycles 
-       (group_id, name, start_date, end_date, status, created_by)
-       VALUES (?, ?, ?, ?, 'draft', ?)`,
-      [groupId, name, start_date, end_date || null, userId],
+       (group_id, name, description, start_date, end_date, share_out_date, notes, status, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)`,
+      [
+        groupId,
+        name,
+        description || null,
+        start_date,
+        end_date || null,
+        share_out_date || null,
+        notes || null,
+        userId,
+      ],
     );
+
+    await logAction(
+      result.insertId,
+      userId,
+      "created",
+      `Cycle "${name}" created`,
+    );
+
     res.status(201).json({
       message: "Cycle created",
       cycleId: result.insertId,
@@ -150,15 +216,15 @@ exports.createCycle = async (req, res) => {
   }
 };
 
-// ─── Admin: Open Cycle ─────────────────────────────────────────────────
+// ─── Admin: Activate Cycle ────────────────────────────────────────────
 
-exports.openCycle = async (req, res) => {
+exports.activateCycle = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
     const [cycle] = await db.query(
-      "SELECT group_id FROM share_out_cycles WHERE id = ?",
+      "SELECT group_id, name FROM share_out_cycles WHERE id = ?",
       [id],
     );
     if (!cycle.length)
@@ -166,18 +232,39 @@ exports.openCycle = async (req, res) => {
     const groupId = cycle[0].group_id;
 
     if (!(await isAdmin(userId, groupId))) {
-      return res.status(403).json({ message: "Only admins can open cycles" });
+      return res
+        .status(403)
+        .json({ message: "Only admins can activate cycles" });
     }
 
-    await db.query("UPDATE share_out_cycles SET status = 'open' WHERE id = ?", [
+    // Check if another cycle is already active
+    const [activeCycle] = await db.query(
+      "SELECT id FROM share_out_cycles WHERE group_id = ? AND status = 'active' AND id != ?",
+      [groupId, id],
+    );
+    if (activeCycle.length) {
+      return res
+        .status(400)
+        .json({ message: "Another cycle is already active. Close it first." });
+    }
+
+    await db.query(
+      "UPDATE share_out_cycles SET status = 'active' WHERE id = ?",
+      [id],
+    );
+    await logAction(
       id,
-    ]);
-    res.json({ message: "Cycle opened" });
+      userId,
+      "activated",
+      `Cycle "${cycle[0].name}" activated`,
+    );
+
+    res.json({ message: "Cycle activated" });
   } catch (error) {
-    console.error("Open cycle error:", error);
+    console.error("Activate cycle error:", error);
     res
       .status(500)
-      .json({ message: "Failed to open cycle", error: error.message });
+      .json({ message: "Failed to activate cycle", error: error.message });
   }
 };
 
@@ -189,7 +276,7 @@ exports.closeCycle = async (req, res) => {
     const userId = req.user.id;
 
     const [cycle] = await db.query(
-      "SELECT group_id FROM share_out_cycles WHERE id = ?",
+      "SELECT group_id, name FROM share_out_cycles WHERE id = ?",
       [id],
     );
     if (!cycle.length)
@@ -206,6 +293,8 @@ exports.closeCycle = async (req, res) => {
        WHERE id = ?`,
       [id],
     );
+    await logAction(id, userId, "closed", `Cycle "${cycle[0].name}" closed`);
+
     res.json({ message: "Cycle closed" });
   } catch (error) {
     console.error("Close cycle error:", error);
@@ -223,12 +312,13 @@ exports.calculate = async (req, res) => {
     const userId = req.user.id;
 
     const [cycle] = await db.query(
-      "SELECT group_id FROM share_out_cycles WHERE id = ?",
+      "SELECT group_id, name FROM share_out_cycles WHERE id = ?",
       [id],
     );
     if (!cycle.length)
       return res.status(404).json({ message: "Cycle not found" });
     const groupId = cycle[0].group_id;
+    const cycleName = cycle[0].name;
 
     if (!(await isAdmin(userId, groupId))) {
       return res
@@ -237,6 +327,13 @@ exports.calculate = async (req, res) => {
     }
 
     const result = await calculateCycleShareOut(id, groupId);
+    await logAction(
+      id,
+      userId,
+      "calculated",
+      `Share-out calculated for "${cycleName}"`,
+    );
+
     res.json({
       message: "Share-out calculated successfully",
       ...result,
@@ -249,11 +346,61 @@ exports.calculate = async (req, res) => {
   }
 };
 
-// ─── Admin: Recalculate (same as calculate) ──────────────────────────
+// ─── Admin: Recalculate ──────────────────────────────────────────────
 
 exports.recalculate = async (req, res) => {
-  // Same as calculate, but we can just call calculate
-  return exports.calculate(req, res);
+  // For safety, only allow recalculation if status is 'calculated' or 'closed'
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const [cycle] = await db.query(
+      "SELECT group_id, status, name FROM share_out_cycles WHERE id = ?",
+      [id],
+    );
+    if (!cycle.length)
+      return res.status(404).json({ message: "Cycle not found" });
+    const groupId = cycle[0].group_id;
+    const currentStatus = cycle[0].status;
+    const cycleName = cycle[0].name;
+
+    if (!(await isAdmin(userId, groupId))) {
+      return res.status(403).json({ message: "Only admins can recalculate" });
+    }
+
+    if (
+      currentStatus === "approved" ||
+      currentStatus === "paid" ||
+      currentStatus === "completed"
+    ) {
+      return res
+        .status(400)
+        .json({
+          message: "Cannot recalculate an approved, paid, or completed cycle",
+        });
+    }
+
+    const result = await calculateCycleShareOut(id, groupId);
+    await logAction(
+      id,
+      userId,
+      "recalculated",
+      `Share-out recalculated for "${cycleName}"`,
+    );
+
+    res.json({
+      message: "Share-out recalculated successfully",
+      ...result,
+    });
+  } catch (error) {
+    console.error("Recalculate error:", error);
+    res
+      .status(500)
+      .json({
+        message: "Failed to recalculate share-out",
+        error: error.message,
+      });
+  }
 };
 
 // ─── Admin: Approve Share-Out ────────────────────────────────────────
@@ -264,12 +411,13 @@ exports.approve = async (req, res) => {
     const userId = req.user.id;
 
     const [cycle] = await db.query(
-      "SELECT group_id FROM share_out_cycles WHERE id = ?",
+      "SELECT group_id, name FROM share_out_cycles WHERE id = ?",
       [id],
     );
     if (!cycle.length)
       return res.status(404).json({ message: "Cycle not found" });
     const groupId = cycle[0].group_id;
+    const cycleName = cycle[0].name;
 
     if (!(await isAdmin(userId, groupId))) {
       return res
@@ -281,6 +429,13 @@ exports.approve = async (req, res) => {
       "UPDATE share_out_cycles SET status = 'approved' WHERE id = ?",
       [id],
     );
+    await logAction(
+      id,
+      userId,
+      "approved",
+      `Share-out approved for "${cycleName}"`,
+    );
+
     res.json({ message: "Share-out approved" });
   } catch (error) {
     console.error("Approve error:", error);
@@ -290,41 +445,122 @@ exports.approve = async (req, res) => {
   }
 };
 
-// ─── Admin: Mark as Paid ──────────────────────────────────────────────
+// ─── Admin: Mark Payments ─────────────────────────────────────────────
 
-exports.markAsPaid = async (req, res) => {
+exports.markPayments = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const { memberIds } = req.body; // array of member IDs to mark as paid
 
     const [cycle] = await db.query(
-      "SELECT group_id FROM share_out_cycles WHERE id = ?",
+      "SELECT group_id, name FROM share_out_cycles WHERE id = ?",
       [id],
     );
     if (!cycle.length)
       return res.status(404).json({ message: "Cycle not found" });
     const groupId = cycle[0].group_id;
+    const cycleName = cycle[0].name;
 
     if (!(await isAdmin(userId, groupId))) {
-      return res.status(403).json({ message: "Only admins can mark as paid" });
+      return res.status(403).json({ message: "Only admins can mark payments" });
     }
 
-    await db.query("UPDATE share_out_cycles SET status = 'paid' WHERE id = ?", [
-      id,
-    ]);
-    // Update all member share-outs to 'paid' and set paid_date
+    let whereClause = "";
+    let params = [id];
+    if (memberIds && memberIds.length) {
+      whereClause = " AND member_id IN (?)";
+      params.push(memberIds);
+    }
+
     await db.query(
       `UPDATE share_outs 
        SET payment_status = 'paid', paid_date = CURDATE() 
-       WHERE cycle_id = ?`,
+       WHERE cycle_id = ?` + whereClause,
+      params,
+    );
+
+    // Update cycle status if all members are paid
+    const [remaining] = await db.query(
+      "SELECT COUNT(*) as count FROM share_outs WHERE cycle_id = ? AND payment_status != 'paid'",
       [id],
     );
-    res.json({ message: "Share-out marked as paid" });
+    if (remaining[0].count === 0) {
+      await db.query(
+        "UPDATE share_out_cycles SET status = 'paid' WHERE id = ?",
+        [id],
+      );
+      await logAction(
+        id,
+        userId,
+        "paid",
+        `All share-outs paid for "${cycleName}"`,
+      );
+    } else {
+      await logAction(
+        id,
+        userId,
+        "payments_updated",
+        `Payments updated for "${cycleName}"`,
+      );
+    }
+
+    res.json({ message: "Payments updated" });
   } catch (error) {
-    console.error("Mark paid error:", error);
+    console.error("Mark payments error:", error);
     res
       .status(500)
-      .json({ message: "Failed to mark as paid", error: error.message });
+      .json({ message: "Failed to mark payments", error: error.message });
+  }
+};
+
+// ─── Admin: Complete Cycle ────────────────────────────────────────────
+
+exports.completeCycle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const [cycle] = await db.query(
+      "SELECT group_id, name FROM share_out_cycles WHERE id = ?",
+      [id],
+    );
+    if (!cycle.length)
+      return res.status(404).json({ message: "Cycle not found" });
+    const groupId = cycle[0].group_id;
+    const cycleName = cycle[0].name;
+
+    if (!(await isAdmin(userId, groupId))) {
+      return res
+        .status(403)
+        .json({ message: "Only admins can complete cycles" });
+    }
+
+    // Check all share-outs are paid
+    const [pending] = await db.query(
+      "SELECT COUNT(*) as count FROM share_outs WHERE cycle_id = ? AND payment_status != 'paid'",
+      [id],
+    );
+    if (pending[0].count > 0) {
+      return res
+        .status(400)
+        .json({
+          message: "All share-outs must be paid before completing the cycle",
+        });
+    }
+
+    await db.query(
+      "UPDATE share_out_cycles SET status = 'completed' WHERE id = ?",
+      [id],
+    );
+    await logAction(id, userId, "completed", `Cycle "${cycleName}" completed`);
+
+    res.json({ message: "Cycle completed" });
+  } catch (error) {
+    console.error("Complete cycle error:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to complete cycle", error: error.message });
   }
 };
 
@@ -366,13 +602,12 @@ exports.getCycleDetails = async (req, res) => {
       return res.status(404).json({ message: "Cycle not found" });
     const cycle = cycles[0];
 
-    // Get member share-outs
     const [shareOuts] = await db.query(
       `SELECT s.*, m.fullname, m.phone
        FROM share_outs s
        JOIN members m ON s.member_id = m.id
        WHERE s.cycle_id = ?
-       ORDER BY s.share_out_amount DESC`,
+       ORDER BY s.gross_share_out DESC`,
       [cycleId],
     );
     res.json({ cycle, shareOuts });
@@ -384,7 +619,7 @@ exports.getCycleDetails = async (req, res) => {
   }
 };
 
-// ─── Admin: Get dashboard stats ───────────────────────────────────────
+// ─── Admin: Dashboard stats ───────────────────────────────────────────
 
 exports.getDashboardStats = async (req, res) => {
   try {
@@ -397,37 +632,53 @@ exports.getDashboardStats = async (req, res) => {
         .json({ message: "Only admins can view dashboard" });
     }
 
-    // Total Savings Pool (all savings)
-    const [savingsRes] = await db.query(
-      "SELECT COALESCE(SUM(amount), 0) as total_savings FROM savings WHERE group_id = ?",
-      [groupId],
-    );
-    const totalSavings = toNumber(savingsRes[0]?.total_savings);
-
-    // Total Loan Interest Earned
-    const [interestRes] = await db.query(
-      "SELECT COALESCE(SUM(amount * interest_rate / 100), 0) as total_interest FROM loans WHERE group_id = ?",
-      [groupId],
-    );
-    const totalInterest = toNumber(interestRes[0]?.total_interest);
-
-    // Total Fines Collected (paid only)
-    const [finesRes] = await db.query(
-      "SELECT COALESCE(SUM(amount), 0) as total_fines FROM fines WHERE group_id = ? AND status = 'paid'",
-      [groupId],
-    );
-    const totalFines = toNumber(finesRes[0]?.total_fines);
-
-    // Total Profit = Interest + Fines (according to spec)
-    const totalProfit = totalInterest + totalFines;
-
-    // Total Share-Out Amount (from latest calculated cycle? or all?)
-    // For now, we sum all share-outs from all cycles? But spec says "Total Share-Out Amount" likely for current or all cycles.
-    // We'll take the latest cycle's total_fund if calculated, else 0.
-    const [latestCycle] = await db.query(
-      `SELECT total_fund, status 
+    // Current active cycle
+    const [activeCycle] = await db.query(
+      `SELECT id, name, status, start_date, end_date 
        FROM share_out_cycles 
-       WHERE group_id = ? AND status IN ('calculated','approved','paid')
+       WHERE group_id = ? AND status IN ('active', 'draft')
+       ORDER BY created_at DESC LIMIT 1`,
+      [groupId],
+    );
+    const currentCycle = activeCycle.length ? activeCycle[0] : null;
+
+    // Totals (from all cycles or global? We'll show global totals for the group)
+    const [savingsRes] = await db.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM savings WHERE group_id = ?",
+      [groupId],
+    );
+    const totalSavings = toNumber(savingsRes[0]?.total);
+
+    const [interestRes] = await db.query(
+      "SELECT COALESCE(SUM(amount * interest_rate / 100), 0) as total FROM loans WHERE group_id = ?",
+      [groupId],
+    );
+    const totalInterest = toNumber(interestRes[0]?.total);
+
+    const [finesRes] = await db.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM fines WHERE group_id = ? AND status = 'paid'",
+      [groupId],
+    );
+    const totalFines = toNumber(finesRes[0]?.total);
+
+    const totalFund = totalSavings + totalInterest + totalFines;
+
+    const [eligibleCount] = await db.query(
+      `SELECT COUNT(DISTINCT m.id) as count
+       FROM members m
+       JOIN savings s ON s.member_id = m.id AND s.group_id = ?
+       WHERE m.group_id = ?`,
+      [groupId, groupId],
+    );
+    const eligibleMembers = eligibleCount.length
+      ? toNumber(eligibleCount[0]?.count)
+      : 0;
+
+    // Latest share-out total (from latest calculated/approved/paid cycle)
+    const [latestCycle] = await db.query(
+      `SELECT total_fund 
+       FROM share_out_cycles 
+       WHERE group_id = ? AND status IN ('calculated','approved','paid','completed')
        ORDER BY created_at DESC LIMIT 1`,
       [groupId],
     );
@@ -435,40 +686,14 @@ exports.getDashboardStats = async (req, res) => {
       ? toNumber(latestCycle[0].total_fund)
       : 0;
 
-    // Members Eligible: all members with savings > 0
-    const [eligibleMembers] = await db.query(
-      `SELECT COUNT(DISTINCT m.id) as count
-       FROM members m
-       JOIN savings s ON s.member_id = m.id AND s.group_id = ?
-       WHERE m.group_id = ?
-       GROUP BY m.id
-       HAVING SUM(s.amount) > 0`,
-      [groupId, groupId],
-    );
-    const membersEligible = eligibleMembers.length
-      ? toNumber(eligibleMembers[0]?.count)
-      : 0;
-
-    // Current Cycle Status
-    const [currentCycle] = await db.query(
-      `SELECT status 
-       FROM share_out_cycles 
-       WHERE group_id = ? 
-       ORDER BY created_at DESC LIMIT 1`,
-      [groupId],
-    );
-    const currentStatus = currentCycle.length
-      ? currentCycle[0].status
-      : "No cycle";
-
     res.json({
+      currentCycle,
       totalSavings,
       totalInterest,
       totalFines,
-      totalProfit,
+      totalFund,
+      eligibleMembers,
       totalShareOut,
-      membersEligible,
-      currentStatus,
     });
   } catch (error) {
     console.error("Dashboard stats error:", error);
@@ -490,64 +715,70 @@ exports.getMemberSummary = async (req, res) => {
       return res.status(404).json({ message: "Member not found" });
     }
 
-    // Total Savings Contributed
+    // Total savings (all time)
     const [savingsRes] = await db.query(
-      "SELECT COALESCE(SUM(amount), 0) as total_savings FROM savings WHERE member_id = ? AND group_id = ?",
+      "SELECT COALESCE(SUM(amount), 0) as total FROM savings WHERE member_id = ? AND group_id = ?",
       [memberId, groupId],
     );
-    const totalSavings = toNumber(savingsRes[0]?.total_savings);
+    const totalSavings = toNumber(savingsRes[0]?.total);
 
-    // Get total group savings
+    // Total group savings
     const [groupSavingsRes] = await db.query(
       "SELECT COALESCE(SUM(amount), 0) as total FROM savings WHERE group_id = ?",
       [groupId],
     );
     const groupSavings = toNumber(groupSavingsRes[0]?.total);
-
-    // Ownership Percentage
     const ownershipPct =
       groupSavings > 0 ? (totalSavings / groupSavings) * 100 : 0;
 
-    // Interest Earned (from latest calculated cycle's share-out for this member)
+    // Outstanding loan
+    const [loanSummary] = await db.query(
+      `SELECT COALESCE(SUM(remaining), 0) as total_outstanding
+       FROM (
+         SELECT (l.amount + (l.amount * l.interest_rate / 100)) - COALESCE(SUM(r.amount_paid), 0) as remaining
+         FROM loans l
+         LEFT JOIN repayments r ON l.id = r.loan_id
+         WHERE l.member_id = ? AND l.group_id = ? AND l.status = 'active'
+         GROUP BY l.id
+       ) AS loan_balances`,
+      [memberId, groupId],
+    );
+    const outstandingLoan = toNumber(loanSummary[0]?.total_outstanding);
+
+    // Latest share-out data
     const [latestShareOut] = await db.query(
-      `SELECT s.profit_earned, s.share_out_amount, c.status
+      `SELECT s.gross_share_out, s.net_share_out, s.profit_earned, s.payment_status, s.paid_date,
+              c.status as cycle_status, c.name as cycle_name
        FROM share_outs s
        JOIN share_out_cycles c ON s.cycle_id = c.id
-       WHERE s.member_id = ? AND c.group_id = ? AND c.status IN ('calculated','approved','paid')
+       WHERE s.member_id = ? AND c.group_id = ? AND c.status IN ('calculated','approved','paid','completed')
        ORDER BY c.created_at DESC LIMIT 1`,
       [memberId, groupId],
     );
+
+    let expectedShareOut = 0;
     let profitEarned = 0;
-    let shareOutAmount = 0;
-    let cycleStatus = null;
+    let paymentStatus = "No cycle";
+    let cycleName = null;
+    let paidDate = null;
+
     if (latestShareOut.length) {
+      expectedShareOut = toNumber(latestShareOut[0].net_share_out);
       profitEarned = toNumber(latestShareOut[0].profit_earned);
-      shareOutAmount = toNumber(latestShareOut[0].share_out_amount);
-      cycleStatus = latestShareOut[0].status;
+      paymentStatus = latestShareOut[0].payment_status || "pending";
+      cycleName = latestShareOut[0].cycle_name;
+      paidDate = latestShareOut[0].paid_date;
     }
-
-    // Fine Contributions Earned (from fines paid by this member)
-    const [finesRes] = await db.query(
-      "SELECT COALESCE(SUM(amount), 0) as total_fines FROM fines WHERE member_id = ? AND group_id = ? AND status = 'paid'",
-      [memberId, groupId],
-    );
-    const fineContributions = toNumber(finesRes[0]?.total_fines);
-
-    // Total Share-Out Amount = savings + profit + fine contributions (but in our calculation, the fund includes fines and interest distributed proportionally, so shareOutAmount already includes that)
-    // We'll use shareOutAmount from the latest cycle if exists, else compute from current totals.
-    // For summary, we can show the latest share-out amount as "Total Share-Out Amount"
-    const totalShareOut =
-      shareOutAmount > 0
-        ? shareOutAmount
-        : totalSavings + profitEarned + fineContributions;
 
     res.json({
       totalSavings,
       ownershipPct,
+      outstandingLoan,
       profitEarned,
-      fineContributions,
-      totalShareOut,
-      cycleStatus,
+      expectedShareOut,
+      paymentStatus,
+      cycleName,
+      paidDate,
     });
   } catch (error) {
     console.error("Member summary error:", error);
@@ -557,7 +788,7 @@ exports.getMemberSummary = async (req, res) => {
   }
 };
 
-// ─── Member: Get share-out history (cycles with their share-outs) ────
+// ─── Member: Get share-out history ────────────────────────────────────
 
 exports.getMemberHistory = async (req, res) => {
   try {
@@ -571,7 +802,8 @@ exports.getMemberHistory = async (req, res) => {
 
     const [history] = await db.query(
       `SELECT c.id as cycle_id, c.name as cycle_name, c.start_date, c.end_date, c.status,
-              s.savings_amount, s.profit_earned, s.share_out_amount, s.payment_status
+              s.savings_amount, s.gross_share_out, s.net_share_out, s.profit_earned,
+              s.payment_status, s.paid_date
        FROM share_outs s
        JOIN share_out_cycles c ON s.cycle_id = c.id
        WHERE s.member_id = ? AND c.group_id = ?
@@ -587,26 +819,21 @@ exports.getMemberHistory = async (req, res) => {
   }
 };
 
-// ─── Member: Get recent share-out activities (from cycles) ────────────
+// ─── Member: Get recent activities ────────────────────────────────────
 
 exports.getMemberActivities = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user.id;
-
-    const memberId = await getMemberId(userId, groupId);
-    if (!memberId) {
-      return res.status(404).json({ message: "Member not found" });
-    }
-
-    // We'll track activities in share_out_cycles changes (creation, status changes) and share-outs updated.
-    // For simplicity, we'll retrieve the last 5 cycles with status changes.
     const [activities] = await db.query(
       `SELECT c.id, c.name, c.status, c.updated_at,
               CASE 
+                WHEN c.status = 'draft' THEN 'Cycle created'
+                WHEN c.status = 'active' THEN 'Cycle activated'
+                WHEN c.status = 'closed' THEN 'Cycle closed'
                 WHEN c.status = 'calculated' THEN 'Share-out calculated'
                 WHEN c.status = 'approved' THEN 'Share-out approved'
                 WHEN c.status = 'paid' THEN 'Share-out paid'
+                WHEN c.status = 'completed' THEN 'Cycle completed'
                 ELSE CONCAT('Cycle ', c.status)
               END as activity
        FROM share_out_cycles c

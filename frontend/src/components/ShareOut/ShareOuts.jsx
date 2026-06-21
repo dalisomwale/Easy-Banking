@@ -15,84 +15,76 @@ import {
   FiTrash2,
   FiEye,
   FiX,
+  FiPercent,
+  FiFileText,
+  FiPrinter,
 } from "react-icons/fi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
-const GroupHeader = () => {
-  const groupName = localStorage.getItem("selectedGroupName") || "My Group";
-  const role = localStorage.getItem("selectedGroupRole");
-  return (
+// ─── Header ─────────────────────────────────────────────────────────────
+const GroupHeader = () => (
+  <div
+    style={{
+      background: "#064E3B",
+      borderRadius: "0 0 2rem 2rem",
+      padding: "1.5rem 1.5rem 3.75rem",
+      position: "relative",
+      overflow: "hidden",
+    }}
+  >
     <div
       style={{
-        background: "#064E3B",
-        borderRadius: "0 0 2rem 2rem",
-        padding: "1.5rem 1.5rem 3.75rem",
-        position: "relative",
-        overflow: "hidden",
+        position: "absolute",
+        top: -40,
+        right: -40,
+        width: 180,
+        height: 180,
+        background: "rgba(255,255,255,0.05)",
+        borderRadius: "50%",
       }}
-    >
-      <div
+    />
+    <div
+      style={{
+        position: "absolute",
+        bottom: -60,
+        left: "30%",
+        width: 240,
+        height: 240,
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: "50%",
+      }}
+    />
+    <div style={{ position: "relative", zIndex: 2 }}>
+      <p
         style={{
-          position: "absolute",
-          top: -40,
-          right: -40,
-          width: 180,
-          height: 180,
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: "50%",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: -60,
-          left: "30%",
-          width: 240,
-          height: 240,
-          background: "rgba(255,255,255,0.04)",
-          borderRadius: "50%",
-        }}
-      />
-      <div
-        style={{
-          position: "relative",
-          zIndex: 2,
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
+          fontSize: 28,
+          fontWeight: 800,
+          color: "#FFFFFF",
+          letterSpacing: "-0.3px",
+          margin: 0,
+          lineHeight: 1.2,
         }}
       >
-        <p
-          style={{
-            fontSize: 28,
-            fontWeight: 800,
-            color: "#FFFFFF",
-            letterSpacing: "-0.3px",
-            margin: 0,
-            lineHeight: 1.2,
-          }}
-        >
-          {groupName}
-        </p>
-        <p
-          style={{
-            fontSize: 12,
-            fontWeight: 500,
-            color: "#A7F3D0",
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-            margin: 0,
-          }}
-        >
-          Share-Out Management
-        </p>
-      </div>
+        Share-Out Management
+      </p>
+      <p
+        style={{
+          fontSize: 12,
+          fontWeight: 500,
+          color: "#A7F3D0",
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          margin: 0,
+        }}
+      >
+        Admin Dashboard
+      </p>
     </div>
-  );
-};
+  </div>
+);
 
-const HeroFundCard = ({ label, amount, sub, icon: Icon }) => (
+const HeroCard = ({ label, amount, sub, icon: Icon, color = "#065F46" }) => (
   <div
     style={{
       padding: "0 1rem",
@@ -130,7 +122,7 @@ const HeroFundCard = ({ label, amount, sub, icon: Icon }) => (
           style={{
             fontSize: 34,
             fontWeight: 700,
-            color: "#065F46",
+            color: color,
             margin: "4px 0 2px",
             lineHeight: 1,
           }}
@@ -162,13 +154,13 @@ const ShareOuts = () => {
   const groupId = localStorage.getItem("selectedGroupId");
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
+    currentCycle: null,
     totalSavings: 0,
     totalInterest: 0,
     totalFines: 0,
-    totalProfit: 0,
+    totalFund: 0,
+    eligibleMembers: 0,
     totalShareOut: 0,
-    membersEligible: 0,
-    currentStatus: "No cycle",
   });
   const [cycles, setCycles] = useState([]);
   const [selectedCycle, setSelectedCycle] = useState(null);
@@ -176,14 +168,18 @@ const ShareOuts = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [cycleForm, setCycleForm] = useState({
     name: "",
+    description: "",
     start_date: new Date().toISOString().split("T")[0],
     end_date: "",
+    share_out_date: "",
+    notes: "",
   });
 
   const toNumber = (val) => (isNaN(Number(val)) ? 0 : Number(val));
   const formatMoney = (v) => `K${v.toFixed(2)}`;
+  const formatPercent = (v) => `${v.toFixed(2)}%`;
 
-  const loadDashboardStats = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try {
       const res = await api.get(`/share-out/dashboard/${groupId}`);
       setStats(res.data);
@@ -221,9 +217,9 @@ const ShareOuts = () => {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadDashboardStats(), loadCycles()]);
+    await Promise.all([loadStats(), loadCycles()]);
     setLoading(false);
-  }, [loadDashboardStats, loadCycles]);
+  }, [loadStats, loadCycles]);
 
   useEffect(() => {
     if (groupId) loadAll();
@@ -239,38 +235,44 @@ const ShareOuts = () => {
       setShowCreateModal(false);
       setCycleForm({
         name: "",
+        description: "",
         start_date: new Date().toISOString().split("T")[0],
         end_date: "",
+        share_out_date: "",
+        notes: "",
       });
       await loadCycles();
+      await loadStats();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create cycle");
     }
   };
 
-  const handleOpenCycle = async (cycleId) => {
+  const handleActivate = async (cycleId) => {
     try {
-      await api.put(`/share-out/cycles/open/${cycleId}`);
-      toast.success("Cycle opened");
+      await api.put(`/share-out/cycles/activate/${cycleId}`);
+      toast.success("Cycle activated");
       await loadCycles();
+      await loadStats();
       if (selectedCycle && selectedCycle.id === cycleId) {
         await loadCycleDetails(cycleId);
       }
     } catch (error) {
-      toast.error("Failed to open cycle");
+      toast.error(error.response?.data?.message || "Failed to activate cycle");
     }
   };
 
-  const handleCloseCycle = async (cycleId) => {
+  const handleClose = async (cycleId) => {
     try {
       await api.put(`/share-out/cycles/close/${cycleId}`);
       toast.success("Cycle closed");
       await loadCycles();
+      await loadStats();
       if (selectedCycle && selectedCycle.id === cycleId) {
         await loadCycleDetails(cycleId);
       }
     } catch (error) {
-      toast.error("Failed to close cycle");
+      toast.error(error.response?.data?.message || "Failed to close cycle");
     }
   };
 
@@ -279,8 +281,10 @@ const ShareOuts = () => {
       const res = await api.post(`/share-out/cycles/calculate/${cycleId}`);
       toast.success(res.data.message || "Share-out calculated");
       await loadCycles();
-      await loadCycleDetails(cycleId);
-      await loadDashboardStats(); // refresh stats
+      await loadStats();
+      if (selectedCycle && selectedCycle.id === cycleId) {
+        await loadCycleDetails(cycleId);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to calculate");
     }
@@ -291,8 +295,10 @@ const ShareOuts = () => {
       const res = await api.post(`/share-out/cycles/recalculate/${cycleId}`);
       toast.success(res.data.message || "Share-out recalculated");
       await loadCycles();
-      await loadCycleDetails(cycleId);
-      await loadDashboardStats();
+      await loadStats();
+      if (selectedCycle && selectedCycle.id === cycleId) {
+        await loadCycleDetails(cycleId);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to recalculate");
     }
@@ -303,21 +309,41 @@ const ShareOuts = () => {
       await api.put(`/share-out/cycles/approve/${cycleId}`);
       toast.success("Share-out approved");
       await loadCycles();
-      await loadCycleDetails(cycleId);
+      await loadStats();
+      if (selectedCycle && selectedCycle.id === cycleId) {
+        await loadCycleDetails(cycleId);
+      }
     } catch (error) {
       toast.error("Failed to approve");
     }
   };
 
-  const handleMarkPaid = async (cycleId) => {
+  const handleMarkPayments = async (cycleId) => {
     try {
-      await api.put(`/share-out/cycles/paid/${cycleId}`);
-      toast.success("Share-out marked as paid");
+      await api.put(`/share-out/cycles/payments/${cycleId}`, {});
+      toast.success("Payments marked as paid");
       await loadCycles();
-      await loadCycleDetails(cycleId);
-      await loadDashboardStats();
+      await loadStats();
+      if (selectedCycle && selectedCycle.id === cycleId) {
+        await loadCycleDetails(cycleId);
+      }
     } catch (error) {
-      toast.error("Failed to mark as paid");
+      toast.error("Failed to mark payments");
+    }
+  };
+
+  const handleComplete = async (cycleId) => {
+    try {
+      await api.put(`/share-out/cycles/complete/${cycleId}`);
+      toast.success("Cycle completed");
+      await loadCycles();
+      await loadStats();
+      if (selectedCycle && selectedCycle.id === cycleId) {
+        setSelectedCycle(null);
+        setShareOuts([]);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to complete cycle");
     }
   };
 
@@ -333,25 +359,48 @@ const ShareOuts = () => {
     );
   }
 
+  // ── Render ──
+
   return (
     <div className="max-w-7xl mx-auto px-2 space-y-5">
       <GroupHeader />
-      <HeroFundCard
-        label="Total Share-Out"
-        amount={formatMoney(stats.totalShareOut)}
-        sub={`Profit: ${formatMoney(stats.totalProfit)} · Status: ${stats.currentStatus}`}
+      <HeroCard
+        label="Total Share-Out Fund"
+        amount={formatMoney(stats.totalFund)}
+        sub={`Profit: ${formatMoney(stats.totalInterest + stats.totalFines)} · Eligible: ${stats.eligibleMembers}`}
         icon={FiPieChart}
       />
 
-      {/* Dashboard Stats */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Savings Pool</p>
+              <p className="text-gray-500 text-sm font-medium">Current Cycle</p>
+              <p className="text-lg font-semibold text-gray-800 mt-1">
+                {stats.currentCycle ? stats.currentCycle.name : "None"}
+              </p>
+              <p className="text-xs text-gray-400 capitalize">
+                {stats.currentCycle
+                  ? stats.currentCycle.status
+                  : "No active cycle"}
+              </p>
+            </div>
+            <div className="bg-emerald-100 p-3 rounded-full">
+              <FiClock className="text-emerald-600" size={20} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Savings</p>
               <p className="text-2xl font-bold text-emerald-700 mt-1">
                 {formatMoney(stats.totalSavings)}
               </p>
+            </div>
+            <div className="bg-emerald-100 p-3 rounded-full">
+              <FiDollarSign className="text-emerald-600" size={20} />
             </div>
           </div>
         </div>
@@ -365,6 +414,9 @@ const ShareOuts = () => {
                 {formatMoney(stats.totalInterest)}
               </p>
             </div>
+            <div className="bg-amber-100 p-3 rounded-full">
+              <FiTrendingUp className="text-amber-600" size={20} />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -377,23 +429,14 @@ const ShareOuts = () => {
                 {formatMoney(stats.totalFines)}
               </p>
             </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">
-                Members Eligible
-              </p>
-              <p className="text-2xl font-bold text-gray-700 mt-1">
-                {stats.membersEligible}
-              </p>
+            <div className="bg-red-100 p-3 rounded-full">
+              <FiAlertTriangle className="text-red-600" size={20} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Cycles List */}
+      {/* Cycles Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-800">Cycles</h2>
@@ -401,7 +444,7 @@ const ShareOuts = () => {
             onClick={() => setShowCreateModal(true)}
             className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 text-sm"
           >
-            New Cycle
+            <FiPlus /> New Cycle
           </button>
         </div>
         <div className="overflow-x-auto">
@@ -438,17 +481,21 @@ const ShareOuts = () => {
                     <td className="px-4 py-3">
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${
-                          cycle.status === "paid"
-                            ? "bg-green-100 text-green-700"
-                            : cycle.status === "approved"
-                              ? "bg-blue-100 text-blue-700"
-                              : cycle.status === "calculated"
-                                ? "bg-amber-100 text-amber-700"
-                                : cycle.status === "open"
-                                  ? "bg-indigo-100 text-indigo-700"
-                                  : cycle.status === "closed"
+                          cycle.status === "draft"
+                            ? "bg-gray-100 text-gray-700"
+                            : cycle.status === "active"
+                              ? "bg-green-100 text-green-700"
+                              : cycle.status === "closed"
+                                ? "bg-blue-100 text-blue-700"
+                                : cycle.status === "calculated"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : cycle.status === "approved"
                                     ? "bg-purple-100 text-purple-700"
-                                    : "bg-gray-100 text-gray-700"
+                                    : cycle.status === "paid"
+                                      ? "bg-indigo-100 text-indigo-700"
+                                      : cycle.status === "completed"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : "bg-gray-100 text-gray-700"
                         }`}
                       >
                         {cycle.status}
@@ -462,28 +509,35 @@ const ShareOuts = () => {
                         onClick={() => handleViewCycle(cycle)}
                         className="text-blue-600 hover:text-blue-800 p-1"
                         title="View Details"
-                      ></button>
+                      >
+                        <FiEye size={16} />
+                      </button>
                       {cycle.status === "draft" && (
                         <button
-                          onClick={() => handleOpenCycle(cycle.id)}
-                          className="text-emerald-600 hover:text-emerald-800 p-1"
-                          title="Open Cycle"
-                        ></button>
+                          onClick={() => handleActivate(cycle.id)}
+                          className="text-green-600 hover:text-green-800 p-1"
+                          title="Activate"
+                        >
+                          <FiCheckCircle size={16} />
+                        </button>
                       )}
-                      {cycle.status === "open" && (
+                      {cycle.status === "active" && (
                         <button
-                          onClick={() => handleCloseCycle(cycle.id)}
+                          onClick={() => handleClose(cycle.id)}
                           className="text-purple-600 hover:text-purple-800 p-1"
                           title="Close Cycle"
-                        ></button>
+                        >
+                          <FiX size={16} />
+                        </button>
                       )}
-                      {(cycle.status === "closed" ||
-                        cycle.status === "open") && (
+                      {cycle.status === "closed" && (
                         <button
                           onClick={() => handleCalculate(cycle.id)}
                           className="text-amber-600 hover:text-amber-800 p-1"
                           title="Calculate Share-Out"
-                        ></button>
+                        >
+                          <FiTrendingUp size={16} />
+                        </button>
                       )}
                       {cycle.status === "calculated" && (
                         <>
@@ -491,20 +545,35 @@ const ShareOuts = () => {
                             onClick={() => handleRecalculate(cycle.id)}
                             className="text-blue-600 hover:text-blue-800 p-1"
                             title="Recalculate"
-                          ></button>
+                          >
+                            <FiRefreshCw size={16} />
+                          </button>
                           <button
                             onClick={() => handleApprove(cycle.id)}
-                            className="text-green-600 hover:text-green-800 p-1"
+                            className="text-purple-600 hover:text-purple-800 p-1"
                             title="Approve"
-                          ></button>
+                          >
+                            <FiCheckCircle size={16} />
+                          </button>
                         </>
                       )}
                       {cycle.status === "approved" && (
                         <button
-                          onClick={() => handleMarkPaid(cycle.id)}
+                          onClick={() => handleMarkPayments(cycle.id)}
+                          className="text-indigo-600 hover:text-indigo-800 p-1"
+                          title="Mark Payments"
+                        >
+                          <FiDollarSign size={16} />
+                        </button>
+                      )}
+                      {cycle.status === "paid" && (
+                        <button
+                          onClick={() => handleComplete(cycle.id)}
                           className="text-emerald-700 hover:text-emerald-900 p-1"
-                          title="Mark as Paid"
-                        ></button>
+                          title="Complete Cycle"
+                        >
+                          <FiCheckCircle size={16} />
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -515,7 +584,7 @@ const ShareOuts = () => {
         </div>
       </div>
 
-      {/* Cycle Details (if selected) */}
+      {/* Cycle Details */}
       {selectedCycle && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -529,10 +598,7 @@ const ShareOuts = () => {
               </p>
             </div>
             <button
-              onClick={() => {
-                setSelectedCycle(null);
-                setShareOuts([]);
-              }}
+              onClick={() => setSelectedCycle(null)}
               className="text-gray-400 hover:text-gray-600"
             >
               <FiX size={20} />
@@ -544,17 +610,19 @@ const ShareOuts = () => {
                 <tr>
                   <th className="px-4 py-3 text-left">Member</th>
                   <th className="px-4 py-3 text-right">Savings</th>
-                  <th className="px-4 py-3 text-center">Ownership %</th>
-                  <th className="px-4 py-3 text-right">Profit</th>
-                  <th className="px-4 py-3 text-right">Share-Out</th>
-                  <th className="px-4 py-3 text-left">Payment Status</th>
+                  <th className="px-4 py-3 text-center">Ownership</th>
+                  <th className="px-4 py-3 text-right">Outstanding Loan</th>
+                  <th className="px-4 py-3 text-right">Profit Earned</th>
+                  <th className="px-4 py-3 text-right">Gross Share-Out</th>
+                  <th className="px-4 py-3 text-right">Net Share-Out</th>
+                  <th className="px-4 py-3 text-left">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {shareOuts.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-400">
-                      No share-outs for this cycle
+                    <td colSpan="8" className="text-center py-8 text-gray-400">
+                      No share-outs calculated yet
                     </td>
                   </tr>
                 ) : (
@@ -567,11 +635,17 @@ const ShareOuts = () => {
                       <td className="px-4 py-3 text-center">
                         {toNumber(so.ownership_percentage).toFixed(2)}%
                       </td>
+                      <td className="px-4 py-3 text-right text-red-600">
+                        {formatMoney(toNumber(so.outstanding_loan))}
+                      </td>
                       <td className="px-4 py-3 text-right text-amber-600">
                         {formatMoney(toNumber(so.profit_earned))}
                       </td>
+                      <td className="px-4 py-3 text-right">
+                        {formatMoney(toNumber(so.gross_share_out))}
+                      </td>
                       <td className="px-4 py-3 text-right font-bold text-emerald-700">
-                        {formatMoney(toNumber(so.share_out_amount))}
+                        {formatMoney(toNumber(so.net_share_out))}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -592,16 +666,13 @@ const ShareOuts = () => {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-3 bg-gray-50 border-t text-xs text-gray-500">
-            Showing {shareOuts.length} member share-outs
-          </div>
         </div>
       )}
 
       {/* Create Cycle Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4">Create New Cycle</h3>
             <form onSubmit={handleCreateCycle} className="space-y-4">
               <div>
@@ -615,6 +686,19 @@ const ShareOuts = () => {
                   value={cycleForm.name}
                   onChange={(e) =>
                     setCycleForm({ ...cycleForm, name: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  className="w-full border rounded-lg px-3 py-2 mt-1"
+                  rows="2"
+                  value={cycleForm.description}
+                  onChange={(e) =>
+                    setCycleForm({ ...cycleForm, description: e.target.value })
                   }
                 />
               </div>
@@ -634,7 +718,7 @@ const ShareOuts = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  End Date (optional)
+                  End Date
                 </label>
                 <input
                   type="date"
@@ -642,6 +726,35 @@ const ShareOuts = () => {
                   value={cycleForm.end_date}
                   onChange={(e) =>
                     setCycleForm({ ...cycleForm, end_date: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Expected Share-Out Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full border rounded-lg px-3 py-2 mt-1"
+                  value={cycleForm.share_out_date}
+                  onChange={(e) =>
+                    setCycleForm({
+                      ...cycleForm,
+                      share_out_date: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Notes
+                </label>
+                <textarea
+                  className="w-full border rounded-lg px-3 py-2 mt-1"
+                  rows="2"
+                  value={cycleForm.notes}
+                  onChange={(e) =>
+                    setCycleForm({ ...cycleForm, notes: e.target.value })
                   }
                 />
               </div>

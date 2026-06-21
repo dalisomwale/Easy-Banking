@@ -8,51 +8,74 @@ import {
   FiCheckCircle,
   FiAlertTriangle,
   FiPieChart,
+  FiPercent,
+  FiUsers,
 } from "react-icons/fi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
-const GroupHeader = () => {
-  const groupName = localStorage.getItem("selectedGroupName") || "My Group";
-
-  const role = localStorage.getItem("selectedGroupRole");
-  return (
+const GroupHeader = () => (
+  <div
+    style={{
+      background: "#064E3B",
+      borderRadius: "0 0 2rem 2rem",
+      padding: "1.5rem 1.5rem 3.75rem",
+      position: "relative",
+      overflow: "hidden",
+    }}
+  >
     <div
       style={{
-        background: "#064E3B",
-        borderRadius: "0 0 2rem 2rem",
-        padding: "1.5rem 1.5rem 3.75rem",
-        position: "relative",
-        overflow: "hidden",
+        position: "absolute",
+        top: -40,
+        right: -40,
+        width: 180,
+        height: 180,
+        background: "rgba(255,255,255,0.05)",
+        borderRadius: "50%",
       }}
-    >
-      <div
+    />
+    <div
+      style={{
+        position: "absolute",
+        bottom: -60,
+        left: "30%",
+        width: 240,
+        height: 240,
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: "50%",
+      }}
+    />
+    <div style={{ position: "relative", zIndex: 2 }}>
+      <p
         style={{
-          position: "absolute",
-          top: -40,
-          right: -40,
-          width: 180,
-          height: 180,
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: "50%",
+          fontSize: 28,
+          fontWeight: 800,
+          color: "#FFFFFF",
+          letterSpacing: "-0.3px",
+          margin: 0,
+          lineHeight: 1.2,
         }}
-      />
-      <div
+      >
+        My Share-Out
+      </p>
+      <p
         style={{
-          position: "absolute",
-          bottom: -60,
-          left: "30%",
-          width: 240,
-          height: 240,
-          background: "rgba(255,255,255,0.04)",
-          borderRadius: "50%",
+          fontSize: 12,
+          fontWeight: 500,
+          color: "#A7F3D0",
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          margin: 0,
         }}
-      />
+      >
+        Member Dashboard
+      </p>
     </div>
-  );
-};
+  </div>
+);
 
-const HeroCard = ({ label, amount, sub, icon: Icon }) => (
+const HeroCard = ({ label, amount, sub, icon: Icon, color = "#065F46" }) => (
   <div
     style={{
       padding: "0 1rem",
@@ -90,7 +113,7 @@ const HeroCard = ({ label, amount, sub, icon: Icon }) => (
           style={{
             fontSize: 34,
             fontWeight: 700,
-            color: "#065F46",
+            color: color,
             margin: "4px 0 2px",
             lineHeight: 1,
           }}
@@ -110,22 +133,25 @@ const HeroCard = ({ label, amount, sub, icon: Icon }) => (
           justifyContent: "center",
           flexShrink: 0,
         }}
-      ></div>
+      >
+        <Icon color="#065F46" size={22} />
+      </div>
     </div>
   </div>
 );
 
 const ShareOut = () => {
-  const navigate = useNavigate();
   const groupId = localStorage.getItem("selectedGroupId");
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({
     totalSavings: 0,
     ownershipPct: 0,
+    outstandingLoan: 0,
     profitEarned: 0,
-    fineContributions: 0,
-    totalShareOut: 0,
-    cycleStatus: null,
+    expectedShareOut: 0,
+    paymentStatus: "No cycle",
+    cycleName: null,
+    paidDate: null,
   });
   const [history, setHistory] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -170,14 +196,22 @@ const ShareOut = () => {
     <div className="max-w-md mx-auto">
       <GroupHeader />
       <HeroCard
-        label="My Share-Out"
-        amount={formatMoney(summary.totalShareOut)}
-        sub={`Savings: ${formatMoney(summary.totalSavings)}`}
+        label="Expected Share-Out"
+        amount={formatMoney(summary.expectedShareOut)}
+        sub={`Status: ${summary.paymentStatus}`}
         icon={FiPieChart}
       />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3 mt-4 px-4">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <p className="text-gray-500 text-xs uppercase tracking-wide">
+            My Savings
+          </p>
+          <p className="text-xl font-bold text-emerald-700 mt-1">
+            {formatMoney(summary.totalSavings)}
+          </p>
+        </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
           <p className="text-gray-500 text-xs uppercase tracking-wide">
             Ownership
@@ -196,25 +230,54 @@ const ShareOut = () => {
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
           <p className="text-gray-500 text-xs uppercase tracking-wide">
-            Fine Contributions
+            Outstanding Loan
           </p>
           <p className="text-xl font-bold text-red-600 mt-1">
-            {formatMoney(summary.fineContributions)}
+            {formatMoney(summary.outstandingLoan)}
           </p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-gray-500 text-xs uppercase tracking-wide">
-            Status
-          </p>
-          <p className="text-sm font-medium text-gray-700 mt-1 capitalize">
-            {summary.cycleStatus || "No cycle"}
-          </p>
+      </div>
+
+      {/* Payment Status */}
+      <div className="mx-4 mt-3">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
+          <div>
+            <p className="text-gray-500 text-xs uppercase tracking-wide">
+              Payment Status
+            </p>
+            <p className="text-lg font-semibold capitalize">
+              {summary.paymentStatus}
+            </p>
+            {summary.cycleName && (
+              <p className="text-xs text-gray-400">
+                Cycle: {summary.cycleName}
+              </p>
+            )}
+          </div>
+          <div
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              summary.paymentStatus === "paid"
+                ? "bg-green-100 text-green-700"
+                : summary.paymentStatus === "processing"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {summary.paymentStatus === "paid"
+              ? "Paid"
+              : summary.paymentStatus === "processing"
+                ? "Processing"
+                : summary.paymentStatus === "No cycle"
+                  ? "No Cycle"
+                  : "Pending"}
+          </div>
         </div>
       </div>
 
       {/* History */}
       <div className="bg-white rounded-xl mx-4 mt-4 p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
+          <FiClock className="text-emerald-500" size={18} />
           <h2 className="text-lg font-semibold text-gray-700">
             Share-Out History
           </h2>
@@ -240,7 +303,7 @@ const ShareOut = () => {
                   </p>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${
-                      item.status === "paid"
+                      item.status === "paid" || item.status === "completed"
                         ? "bg-green-100 text-green-700"
                         : item.status === "approved"
                           ? "bg-blue-100 text-blue-700"
@@ -254,10 +317,13 @@ const ShareOut = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-emerald-600">
-                    {formatMoney(item.share_out_amount)}
+                    {formatMoney(item.net_share_out)}
                   </p>
                   <p className="text-xs text-gray-400">
                     Profit: {formatMoney(item.profit_earned)}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Gross: {formatMoney(item.gross_share_out)}
                   </p>
                 </div>
               </div>
@@ -269,6 +335,7 @@ const ShareOut = () => {
       {/* Recent Activities */}
       <div className="bg-white rounded-xl mx-4 mt-4 mb-6 p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
+          <FiActivity className="text-amber-500" size={18} />
           <h2 className="text-lg font-semibold text-gray-700">
             Recent Activities
           </h2>
