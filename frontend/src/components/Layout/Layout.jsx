@@ -101,7 +101,14 @@ const Layout = () => {
       { path: "/app/share-out", label: "Share-Out", icon: FiPieChart },
     );
   }
-  navItems.push({ path: "/app/profile", label: "Profile", icon: FiUser });
+
+  // Profile remains in nav for admins, but for members it's only in header on dashboard
+  if (isAdmin) {
+    navItems.push({ path: "/app/profile", label: "Profile", icon: FiUser });
+  }
+
+  // Check if we're on the member dashboard
+  const isMemberDashboard = !isAdmin && location.pathname === "/app/dashboard";
 
   /* ── MOBILE ── */
   if (isMobile) {
@@ -152,6 +159,16 @@ const Layout = () => {
               Umozi Savings
             </p>
           </div>
+
+          {/* 🔥 Simple profile icon – no wrapper, only on member dashboard */}
+          {isMemberDashboard && (
+            <FiUser
+              color="#fff"
+              size={22}
+              onClick={() => navigate("/app/profile")}
+              style={{ cursor: "pointer" }}
+            />
+          )}
         </header>
 
         <main>
@@ -390,6 +407,9 @@ const Layout = () => {
             top: 0,
             zIndex: 10,
             boxShadow: "0 1px 8px rgba(0,0,0,0.1)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <h1
@@ -404,6 +424,24 @@ const Layout = () => {
             {navItems.find((i) => i.path === location.pathname)?.label ||
               "Easy Banking"}
           </h1>
+
+          {/* 🔥 Simple profile link – no wrapper, only on member dashboard */}
+          {isMemberDashboard && (
+            <div
+              onClick={() => navigate("/app/profile")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                color: "#fff",
+                fontSize: 14,
+              }}
+            >
+              <FiUser size={18} />
+              <span style={{ fontWeight: 500 }}>Profile</span>
+            </div>
+          )}
         </div>
 
         <main style={{ padding: 24 }}>
