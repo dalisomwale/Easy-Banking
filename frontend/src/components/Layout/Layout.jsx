@@ -13,43 +13,7 @@ import {
   FiAlertTriangle,
   FiPieChart,
 } from "react-icons/fi";
-
-const BankLogo = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ display: "block" }}
-  >
-    <path
-      d="M4 10L12 3L20 10V19C20 19.5304 19.7893 20.0391 19.4142 20.4142C19.0391 20.7893 18.5304 21 18 21H6C5.46957 21 4.96086 20.7893 4.58579 20.4142C4.21071 20.0391 4 19.5304 4 19V10Z"
-      stroke="#EA580C"
-      strokeWidth="1.5"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M8 21V15H16V21"
-      stroke="#EA580C"
-      strokeWidth="1.5"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M12 7V9"
-      stroke="#EA580C"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <circle cx="12" cy="13" r="1" fill="#EA580C" />
-    <circle cx="16" cy="13" r="1" fill="#EA580C" />
-    <circle cx="8" cy="13" r="1" fill="#EA580C" />
-  </svg>
-);
+import Logo from "./Logo";
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -102,12 +66,10 @@ const Layout = () => {
     );
   }
 
-  // Profile remains in nav for admins, but for members it's only in header on dashboard
   if (isAdmin) {
     navItems.push({ path: "/app/profile", label: "Profile", icon: FiUser });
   }
 
-  // Check if we're on the member dashboard
   const isMemberDashboard = !isAdmin && location.pathname === "/app/dashboard";
 
   /* ── MOBILE ── */
@@ -116,11 +78,10 @@ const Layout = () => {
       <div
         style={{ minHeight: "100vh", background: "#F8F9FB", paddingBottom: 72 }}
       >
+        {/* 🔥 Mobile header – solid dark green */}
         <header
           style={{
-            background: "rgba(4, 56, 44, 0.85)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
+            background: "#04382C", // solid dark green
             position: "sticky",
             top: 0,
             zIndex: 20,
@@ -132,35 +93,8 @@ const Layout = () => {
             borderBottom: "1px solid rgba(167,243,208,0.2)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: "rgba(234,88,12,0.12)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <BankLogo />
-            </div>
-            <p
-              style={{
-                fontSize: 17,
-                fontWeight: 800,
-                color: "#fff",
-                margin: 0,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Umozi Savings
-            </p>
-          </div>
+          <Logo size="default" variant="light" showSubtitle />
 
-          {/* Profile icon – only on member dashboard */}
           {isMemberDashboard && (
             <FiUser
               color="#fff"
@@ -262,36 +196,34 @@ const Layout = () => {
           style={{
             padding: "24px 20px 20px",
             borderBottom: "1px solid rgba(167,243,208,0.15)",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
           }}
         >
+          <Logo size="default" variant="light" showSubtitle />
           <div
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: "rgba(234,88,12,0.12)",
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
+              gap: 6,
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(167,243,208,0.25)",
+              borderRadius: 999,
+              padding: "3px 10px",
+              marginTop: 12,
             }}
           >
-            <BankLogo />
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "#34D399",
+                display: "inline-block",
+              }}
+            />
+            <span style={{ fontSize: 11, color: "#A7F3D0", fontWeight: 500 }}>
+              {groupName} · {groupRole}
+            </span>
           </div>
-          <p
-            style={{
-              fontSize: 17,
-              fontWeight: 800,
-              color: "#fff",
-              margin: 0,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Umozi Savings
-          </p>
         </div>
 
         <nav style={{ flex: 1, padding: "16px 0" }}>
@@ -425,7 +357,6 @@ const Layout = () => {
               "Easy Banking"}
           </h1>
 
-          {/* Profile link – only on member dashboard */}
           {isMemberDashboard && (
             <div
               onClick={() => navigate("/app/profile")}

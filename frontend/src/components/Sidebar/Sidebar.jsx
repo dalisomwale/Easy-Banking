@@ -3,50 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiHome,
   FiUsers,
-  FiDollarSign,
+  FiTrendingUp,
   FiBookOpen,
   FiBarChart2,
   FiLogOut,
   FiRefreshCw,
 } from "react-icons/fi";
-
-// Bank building logo component (orange outline + fill)
-const BankLogo = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ display: "block" }}
-  >
-    <path
-      d="M4 10L12 3L20 10V19C20 19.5304 19.7893 20.0391 19.4142 20.4142C19.0391 20.7893 18.5304 21 18 21H6C5.46957 21 4.96086 20.7893 4.58579 20.4142C4.21071 20.0391 4 19.5304 4 19V10Z"
-      stroke="#EA580C"
-      strokeWidth="1.5"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M8 21V15H16V21"
-      stroke="#EA580C"
-      strokeWidth="1.5"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M12 7V9"
-      stroke="#EA580C"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <circle cx="12" cy="13" r="1" fill="#EA580C" />
-    <circle cx="16" cy="13" r="1" fill="#EA580C" />
-    <circle cx="8" cy="13" r="1" fill="#EA580C" />
-  </svg>
-);
+import Logo from "../Logo"; // ✅ import from Layout folder
 
 const Sidebar = ({ admin }) => {
   const navigate = useNavigate();
@@ -56,13 +19,17 @@ const Sidebar = ({ admin }) => {
   const isAdmin = groupRole === "admin";
 
   const navItems = [
-    { path: "/", label: "Dashboard", icon: FiHome },
-    { path: "/savings/add", label: "Add Saving", icon: FiDollarSign },
-    { path: "/loans", label: "Loans", icon: FiBookOpen },
-    { path: "/members", label: "Members", icon: FiUsers },
+    { path: "/app/dashboard", label: "Dashboard", icon: FiHome },
+    { path: "/app/savings/add", label: "Add Saving", icon: FiTrendingUp },
+    { path: "/app/loans", label: "Loans", icon: FiBookOpen },
+    { path: "/app/members", label: "Members", icon: FiUsers },
   ];
   if (isAdmin) {
-    navItems.push({ path: "/reports", label: "Reports", icon: FiBarChart2 });
+    navItems.push({
+      path: "/app/reports",
+      label: "Reports",
+      icon: FiBarChart2,
+    });
   }
 
   const handleLogout = () => {
@@ -87,40 +54,13 @@ const Sidebar = ({ admin }) => {
         boxShadow: "2px 0 16px rgba(0,0,0,0.2)",
       }}
     >
-      {/* Brand with bank logo */}
       <div
         style={{
           padding: "24px 20px 20px",
           borderBottom: "1px solid rgba(167,243,208,0.15)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: "rgba(234,88,12,0.12)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <BankLogo />
-          </div>
-          <p
-            style={{
-              fontSize: 17,
-              fontWeight: 800,
-              color: "#fff",
-              margin: 0,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Umozi Savings
-          </p>
-        </div>
+        <Logo size="default" variant="light" showSubtitle />
         <div
           style={{
             display: "inline-flex",
@@ -148,7 +88,6 @@ const Sidebar = ({ admin }) => {
         </div>
       </div>
 
-      {/* Navigation */}
       <nav style={{ flex: 1, padding: "16px 0" }}>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -188,7 +127,6 @@ const Sidebar = ({ admin }) => {
         })}
       </nav>
 
-      {/* Footer buttons */}
       <div
         style={{
           padding: "16px 20px",

@@ -21,10 +21,9 @@ const Logo = ({
 
   const currentSize = iconSizes[size] || 26;
   const textColor = variant === "light" ? "text-white" : "text-emerald-700";
-  const iconColor = "text-amber-500"; // always amber
+  const iconColor = "text-amber-500";
   const iconBg = variant === "light" ? "bg-white/10" : "bg-white";
 
-  // ─── Glass block style (used on login/register) ──────────────────
   if (glass) {
     return (
       <div className="bg-white/[0.07] backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/40 w-full max-w-sm md:max-w-md overflow-hidden border border-white/[0.12] ring-1 ring-white/[0.05]">
@@ -94,7 +93,6 @@ const Logo = ({
     );
   }
 
-  // ─── Inline logo (used in Header, Layout, Sidebar) ──────────────
   return (
     <div className="flex items-center gap-2">
       <div className={`p-1.5 rounded-md ${iconBg}`}>
