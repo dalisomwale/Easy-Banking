@@ -32,18 +32,22 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md overflow-hidden border border-white/20">
-        <div className="bg-emerald-700/50 p-4 sm:p-6 text-center">
-          <div className="flex justify-center mb-2 sm:mb-3">
-            <div className="bg-white/10 p-1.5 sm:p-2 rounded-lg">
+    <div className="min-h-screen bg-emerald-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient background glow — subtle, not a loud gradient sweep */}
+      <div className="absolute -top-32 -left-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-[28rem] h-[28rem] bg-emerald-500/10 rounded-full blur-3xl"></div>
+
+      <div className="relative z-10 bg-white/[0.07] backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/40 w-full max-w-sm md:max-w-md overflow-hidden border border-white/[0.12] ring-1 ring-white/[0.05]">
+        <div className="px-6 sm:px-8 pt-7 sm:pt-9 pb-6 text-center border-b border-white/[0.08]">
+          <div className="flex justify-center mb-3">
+            <div className="bg-white/[0.08] p-2.5 rounded-xl border border-white/[0.12]">
               <svg
                 width={36}
                 height={36}
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="text-white sm:w-12 sm:h-12"
+                className="text-amber-300"
               >
                 <path
                   d="M4 9.5L12 4L20 9.5"
@@ -89,29 +93,30 @@ const Login = () => {
               </svg>
             </div>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
             Umozi Savings
           </h1>
-          <p className="text-emerald-100 text-xs sm:text-sm mt-1">
+          <p className="text-emerald-200/70 text-xs sm:text-sm mt-1">
             A Village Banking System
           </p>
         </div>
+
         <form
           onSubmit={handleSubmit}
-          className="p-5 sm:p-8 space-y-4 sm:space-y-6"
+          className="px-6 sm:px-8 pt-6 pb-7 space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-emerald-100 mb-1 sm:mb-2">
-              Email
+            <label className="block text-xs font-medium text-emerald-100/80 mb-1.5 tracking-wide">
+              EMAIL
             </label>
             <div className="relative">
               <FiMail
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-300/70"
                 size={16}
               />
               <input
                 type="email"
-                className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-sm sm:text-base bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full pl-10 pr-3.5 py-2.5 text-sm bg-white/[0.06] border border-white/[0.12] rounded-lg text-white placeholder-white/30 outline-none focus:bg-white/[0.09] focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20 transition"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
@@ -122,18 +127,19 @@ const Login = () => {
               />
             </div>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-emerald-100 mb-1 sm:mb-2">
-              Password
+            <label className="block text-xs font-medium text-emerald-100/80 mb-1.5 tracking-wide">
+              PASSWORD
             </label>
             <div className="relative">
               <FiLock
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-300/70"
                 size={16}
               />
               <input
                 type="password"
-                className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-sm sm:text-base bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full pl-10 pr-3.5 py-2.5 text-sm bg-white/[0.06] border border-white/[0.12] rounded-lg text-white placeholder-white/30 outline-none focus:bg-white/[0.09] focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20 transition"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
@@ -144,23 +150,24 @@ const Login = () => {
               />
             </div>
           </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 transition text-sm sm:text-base"
+            className="w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-emerald-950 font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 transition text-sm mt-2"
           >
             <FiLogIn size={16} /> {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-        <div className="pb-5 sm:pb-8 text-center">
+
+        <div className="pb-7 text-center">
           <button
             onClick={() => navigate("/register")}
-            className="text-emerald-100 hover:text-white underline-offset-2 hover:underline text-sm"
+            className="text-emerald-200/70 hover:text-white underline-offset-2 hover:underline text-sm transition"
           >
             Don't have an account? Register
           </button>
         </div>
-        <div className="pb-3 sm:pb-4 text-center text-white/40 text-xs"></div>
       </div>
     </div>
   );

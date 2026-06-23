@@ -45,52 +45,55 @@ const GroupSelect = () => {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center">
-        <div className="text-white/80">Loading...</div>
+      <div className="min-h-screen bg-emerald-950 flex items-center justify-center">
+        <div className="text-white/60">Loading...</div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-700 to-emerald-900 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-emerald-950 py-8 px-4 relative overflow-hidden">
+      <div className="absolute -top-32 -right-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-[28rem] h-[28rem] bg-emerald-500/10 rounded-full blur-3xl"></div>
+
+      <div className="relative z-10 max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white">Select Your Group</h1>
-          <p className="text-emerald-100 mt-2">Choose a group to continue</p>
+          <p className="text-emerald-200/70 mt-2">Choose a group to continue</p>
         </div>
 
-        {/* Action buttons always visible in a row */}
+        {/* Action buttons */}
         <div className="flex flex-row gap-3 justify-center mb-6">
           <button
             onClick={() => navigate("/create-group")}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg flex items-center justify-center gap-2"
+            className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-semibold px-6 py-2 rounded-lg flex items-center justify-center gap-2 transition"
           >
             <FiPlusCircle /> Create Group
           </button>
           <button
             onClick={() => navigate("/join-group")}
-            className="border border-amber-300 text-amber-100 hover:bg-amber-600/20 px-6 py-2 rounded-lg flex items-center justify-center gap-2"
+            className="border border-white/[0.12] hover:bg-white/[0.05] text-white/80 px-6 py-2 rounded-lg flex items-center justify-center gap-2 transition"
           >
             <FiUsers /> Join Group
           </button>
         </div>
 
-        {/* List of groups (if any) */}
+        {/* List of groups */}
         {groups.length > 0 && (
           <div className="space-y-4">
             {groups.map((group) => (
               <div
                 key={group.id}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20 hover:bg-white/15 transition"
+                className="bg-white/[0.07] backdrop-blur-sm rounded-xl p-5 border border-white/[0.12] hover:bg-white/[0.12] transition"
               >
                 <div className="flex justify-between items-start flex-wrap gap-2">
                   <div>
                     <h2 className="text-xl font-bold text-white">
                       {group.name}
                     </h2>
-                    <p className="text-emerald-100 text-sm capitalize mt-1">
+                    <p className="text-emerald-200/70 text-sm capitalize mt-1">
                       Role: <span className="font-medium">{group.role}</span>
                     </p>
-                    <div className="flex items-center gap-2 mt-2 text-emerald-100 text-sm">
+                    <div className="flex items-center gap-2 mt-2 text-emerald-200/70 text-sm">
                       <FiCode className="text-amber-300" /> Group Code:{" "}
                       <span className="font-mono font-medium">
                         {group.code}
@@ -101,9 +104,9 @@ const GroupSelect = () => {
                     onClick={() =>
                       handleSelectGroup(group.id, group.name, group.role)
                     }
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
+                    className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-semibold px-5 py-2 rounded-lg flex items-center gap-2 transition"
                   >
-                    Enter
+                    <FiLogIn /> Enter
                   </button>
                 </div>
               </div>
@@ -113,11 +116,11 @@ const GroupSelect = () => {
 
         {/* Fallback when no groups exist */}
         {groups.length === 0 && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center border border-white/20 mt-4">
+          <div className="bg-white/[0.07] backdrop-blur-sm rounded-xl p-8 text-center border border-white/[0.12] mt-4">
             <p className="text-white mb-2">
               You are not a member of any group yet.
             </p>
-            <p className="text-emerald-100 text-sm">
+            <p className="text-emerald-200/70 text-sm">
               Create a new group or join using a group code.
             </p>
           </div>
