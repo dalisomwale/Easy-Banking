@@ -281,21 +281,21 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <div
         className="relative bg-cover bg-center bg-no-repeat text-white min-h-[70vh] md:min-h-[80vh] flex items-center"
         style={{ backgroundImage: `url(${landpagePhoto})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-800/80 to-emerald-700/60"></div>
+        <div className="absolute inset-0 bg-emerald-950/70"></div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 w-full">
           <div className="text-center">
             <div className="flex justify-center mb-6">
-              <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-sm border border-white/10">
+              <div className="bg-white/10 p-3 rounded-xl border border-white/15">
                 <svg
-                  width={64}
-                  height={64}
+                  width={56}
+                  height={56}
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -345,20 +345,20 @@ const LandingPage = () => {
                 </svg>
               </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">
               Umozi Savings
-              <span className="block text-emerald-200 text-2xl md:text-3xl mt-2 drop-shadow-md">
+              <span className="block text-emerald-200 text-2xl md:text-3xl mt-2 font-medium">
                 A Village Banking System
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto mb-8 drop-shadow-md">
+            <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto mb-8">
               Designed for village banking groups to manage savings, loans,
               repayments, fines, and share‑outs easily and transparently.
             </p>
             <div className="flex flex-row flex-wrap gap-4 justify-center">
               <button
                 onClick={scrollToCTA}
-                className="border border-amber-400 hover:border-amber-300 hover:bg-amber-500/10 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg"
+                className="bg-amber-500 hover:bg-amber-400 text-emerald-950 px-8 py-3 rounded-lg font-semibold transition"
               >
                 Get Started
               </button>
@@ -371,112 +371,114 @@ const LandingPage = () => {
       <div className="py-20 md:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-800 tracking-tight">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
               How It Works
             </h2>
-            <div className="w-24 h-1 bg-amber-400 mx-auto mt-4 rounded-full"></div>
+            <div className="w-16 h-1 bg-amber-500 mx-auto mt-3 rounded-full"></div>
             <p className="text-gray-600 mt-4 max-w-2xl mx-auto text-lg">
               A guide on how to get started with Umozi Savings using simple
               steps for both admins and members.
             </p>
           </div>
 
-          {/* Admin Row */}
+          {/* Admin Row – video on top on mobile, left on desktop */}
           <div className="mb-16">
-            <div className="flex flex-col items-center md:items-start mb-8">
-              <h3 className="text-2xl font-bold text-gray-800">For Admins</h3>
-              <div className="w-16 h-1 bg-emerald-400 mt-2 rounded-full"></div>
-            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-8">
+              For Admins
+            </h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6 order-2 lg:order-1">
+              {/* Video – first in DOM (top on mobile, left on desktop) */}
+              <div
+                className="relative group rounded-2xl overflow-hidden border border-emerald-200 hover:border-emerald-300 shadow-lg cursor-pointer lg:scale-105 transition-all duration-200"
+                onMouseEnter={handleAdminMouseEnter}
+                onMouseLeave={handleAdminMouseLeave}
+                onClick={toggleAdminPlay}
+              >
+                <video
+                  ref={adminVideoRef}
+                  src={adminVideo}
+                  className="w-full h-auto object-cover aspect-video"
+                  muted
+                  playsInline
+                  loop
+                />
+                {!adminPlaying && (
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/30 transition">
+                    <div className="bg-white rounded-full p-4 shadow-lg">
+                      <FiPlay className="text-emerald-700 text-2xl ml-0.5" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Steps – second in DOM (below video on mobile, right on desktop) */}
+              <div className="space-y-3">
                 {adminSteps.map((step, idx) => {
                   const Icon = step.icon;
                   return (
-                    <div key={idx} className="flex items-start gap-4">
-                      <div className="bg-gradient-to-br from-emerald-100/50 to-emerald-200/50 rounded-full p-3 flex-shrink-0 mt-1">
-                        <Icon className="text-emerald-600" size={20} />
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="bg-emerald-50 rounded-full p-2 lg:p-2.5 flex-shrink-0 mt-0.5">
+                        <Icon className="text-emerald-600" size={16} />
                       </div>
                       <div>
-                        <h4 className="text-lg font-bold text-gray-800">
+                        <h4 className="text-sm font-medium text-gray-800 lg:text-base">
                           {step.title}
                         </h4>
-                        <p className="text-gray-600">{step.desc}</p>
+                        <p className="text-xs text-gray-500 lg:text-sm">
+                          {step.desc}
+                        </p>
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <div className="p-[1.5px] rounded-2xl bg-gradient-to-br from-emerald-300/70 to-emerald-500/70 order-1 lg:order-2">
-                <div
-                  className="relative group rounded-2xl overflow-hidden shadow-lg cursor-pointer"
-                  onMouseEnter={handleAdminMouseEnter}
-                  onMouseLeave={handleAdminMouseLeave}
-                  onClick={toggleAdminPlay}
-                >
-                  <video
-                    ref={adminVideoRef}
-                    src={adminVideo}
-                    className="w-full h-auto object-cover aspect-video"
-                    muted
-                    playsInline
-                    loop
-                  />
-                  {!adminPlaying && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition">
-                      <div className="bg-white/90 rounded-full p-5 shadow-2xl group-hover:scale-110 transition-transform duration-300">
-                        <FiPlay className="text-amber-500 text-3xl ml-1" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Member Row */}
+          {/* Member Row – video on top on mobile, left on desktop */}
           <div>
-            <div className="flex flex-col items-center md:items-start mb-8">
-              <h3 className="text-2xl font-bold text-gray-800">For Members</h3>
-              <div className="w-16 h-1 bg-emerald-400 mt-2 rounded-full"></div>
-            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-8">
+              For Members
+            </h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="p-[1.5px] rounded-2xl bg-gradient-to-br from-emerald-300/70 to-emerald-500/70 order-1">
-                <div
-                  className="relative group rounded-2xl overflow-hidden shadow-lg cursor-pointer"
-                  onMouseEnter={handleMemberMouseEnter}
-                  onMouseLeave={handleMemberMouseLeave}
-                  onClick={toggleMemberPlay}
-                >
-                  <video
-                    ref={memberVideoRef}
-                    src={memberVideo}
-                    className="w-full h-auto object-cover aspect-video"
-                    muted
-                    playsInline
-                    loop
-                  />
-                  {!memberPlaying && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition">
-                      <div className="bg-white/90 rounded-full p-5 shadow-2xl group-hover:scale-110 transition-transform duration-300">
-                        <FiPlay className="text-amber-500 text-3xl ml-1" />
-                      </div>
+              {/* Video – first in DOM (top on mobile, left on desktop) */}
+              <div
+                className="relative group rounded-2xl overflow-hidden border border-emerald-200 hover:border-emerald-300 shadow-lg cursor-pointer lg:scale-105 transition-all duration-200"
+                onMouseEnter={handleMemberMouseEnter}
+                onMouseLeave={handleMemberMouseLeave}
+                onClick={toggleMemberPlay}
+              >
+                <video
+                  ref={memberVideoRef}
+                  src={memberVideo}
+                  className="w-full h-auto object-cover aspect-video"
+                  muted
+                  playsInline
+                  loop
+                />
+                {!memberPlaying && (
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/30 transition">
+                    <div className="bg-white rounded-full p-4 shadow-lg">
+                      <FiPlay className="text-emerald-700 text-2xl ml-0.5" />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-              <div className="space-y-6 order-2">
+              {/* Steps – second in DOM (below video on mobile, right on desktop) */}
+              <div className="space-y-3">
                 {memberSteps.map((step, idx) => {
                   const Icon = step.icon;
                   return (
-                    <div key={idx} className="flex items-start gap-4">
-                      <div className="bg-gradient-to-br from-emerald-100/50 to-emerald-200/50 rounded-full p-3 flex-shrink-0 mt-1">
-                        <Icon className="text-emerald-600" size={20} />
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="bg-emerald-50 rounded-full p-2 lg:p-2.5 flex-shrink-0 mt-0.5">
+                        <Icon className="text-emerald-600" size={16} />
                       </div>
                       <div>
-                        <h4 className="text-lg font-bold text-gray-800">
+                        <h4 className="text-sm font-medium text-gray-800 lg:text-base">
                           {step.title}
                         </h4>
-                        <p className="text-gray-600">{step.desc}</p>
+                        <p className="text-xs text-gray-500 lg:text-sm">
+                          {step.desc}
+                        </p>
                       </div>
                     </div>
                   );
@@ -488,13 +490,13 @@ const LandingPage = () => {
       </div>
 
       {/* ─── Features Section ──────────────────────────────────────────── */}
-      <div className="py-20 md:py-28 bg-gradient-to-b from-white to-emerald-50/50">
+      <div className="py-20 md:py-28 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-800 tracking-tight">
-              Our Features
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
+              Platform Features
             </h2>
-            <div className="w-24 h-1 bg-amber-400 mx-auto mt-4 rounded-full"></div>
+            <div className="w-20 h-1 bg-amber-500 mx-auto mt-3 rounded-full"></div>
             <p className="text-gray-600 mt-4 max-w-2xl mx-auto text-lg">
               Everything you need to run your village banking group efficiently.
             </p>
@@ -504,22 +506,20 @@ const LandingPage = () => {
             {features.map((feature, idx) => (
               <div
                 key={idx}
-                className="p-[1.5px] rounded-2xl bg-gradient-to-t from-orange-300/10 to-amber-500/10 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                className="bg-white rounded-xl overflow-hidden border border-emerald-200 hover:border-emerald-300 hover:shadow-md transition-all duration-200 flex flex-col h-full"
               >
-                <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col h-full">
-                  <img
-                    src={feature.image}
-                    alt={feature.title}
-                    className="w-full h-48 object-cover object-top"
-                  />
-                  <div className="p-8 flex flex-col items-start flex-1">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
+                <img
+                  src={feature.image}
+                  alt={feature.title}
+                  className="w-full h-48 object-cover object-top"
+                />
+                <div className="p-8 flex flex-col items-start flex-1">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
               </div>
             ))}
@@ -528,13 +528,13 @@ const LandingPage = () => {
       </div>
 
       {/* ─── Pricing Section ───────────────────────────────────────────── */}
-      <div className="py-16 md:py-24 bg-gradient-to-b from-white to-emerald-50/80">
+      <div className="py-16 md:py-24 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
               Subscription Plans
             </h2>
-            <div className="w-24 h-1 bg-amber-400 mx-auto mt-4 rounded-full"></div>
+            <div className="w-20 h-1 bg-amber-500 mx-auto mt-3 rounded-full"></div>
             <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
               Choose the plan that fits your group size and needs. Upgrade or
               downgrade anytime.
@@ -602,24 +602,24 @@ const LandingPage = () => {
               );
 
               if (plan.popular) {
+                // ─── Standard Plan: faint orange border ──────────────
                 return (
                   <div
                     key={plan.id}
-                    className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col ring-2 ring-amber-400 hover:scale-[1.02]"
+                    className="bg-white rounded-2xl p-6 shadow-md border border-amber-300/60 hover:border-amber-400/80 hover:shadow-lg transition-all duration-200 flex flex-col"
                   >
                     {cardContent}
                   </div>
                 );
               }
 
+              // ─── Basic Plan: faint green border ────────────────────
               return (
                 <div
                   key={plan.id}
-                  className="p-[1.5px] rounded-2xl bg-gradient-to-br from-emerald-300/70 to-emerald-500/70 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                  className="bg-white rounded-2xl p-6 border border-emerald-200 hover:border-emerald-300 hover:shadow-md transition-all duration-200 flex flex-col h-full"
                 >
-                  <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col h-full">
-                    {cardContent}
-                  </div>
+                  {cardContent}
                 </div>
               );
             })}
@@ -628,13 +628,13 @@ const LandingPage = () => {
       </div>
 
       {/* ─── FAQ Section – Two Columns ────────────────────────────────── */}
-      <div className="py-16 md:py-24 bg-white">
+      <div className="py-16 md:py-24 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
               Frequently Asked Questions
             </h2>
-            <div className="w-24 h-1 bg-amber-400 mx-auto mt-4 rounded-full"></div>
+            <div className="w-20 h-1 bg-amber-500 mx-auto mt-3 rounded-full"></div>
             <p className="text-gray-600 mt-4">
               Quick answers to common questions about Umozi Savings.
             </p>
@@ -675,29 +675,26 @@ const LandingPage = () => {
       </div>
 
       {/* ─── CTA Section ────────────────────────────────────────────────── */}
-      <div
-        id="cta-section"
-        className="py-16 md:py-24 bg-gradient-to-b from-emerald-50 to-white"
-      >
+      <div id="cta-section" className="py-16 md:py-24 bg-white">
         <div className="max-w-md mx-auto px-4">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">
+          <div className="bg-emerald-900 rounded-2xl p-8 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
               Ready to Get Started?
             </h2>
-            <p className="text-gray-700 mb-6">
+            <p className="text-emerald-100 mb-6">
               Create an account, join a group or create your own and start
               managing savings, loans, fines, and share‑outs with ease.
             </p>
             <div className="flex flex-row gap-3 justify-center">
               <button
                 onClick={() => navigate("/login")}
-                className="bg-emerald-600/80 backdrop-blur-sm hover:bg-emerald-600 text-white px-5 py-2 rounded-lg font-semibold transition"
+                className="bg-emerald-800 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-semibold transition"
               >
                 Login
               </button>
               <button
                 onClick={() => navigate("/register")}
-                className="bg-amber-500/80 backdrop-blur-sm hover:bg-amber-500 text-white px-5 py-2 rounded-lg font-semibold transition"
+                className="bg-amber-500 hover:bg-amber-400 text-emerald-950 px-5 py-2 rounded-lg font-semibold transition"
               >
                 Register
               </button>
