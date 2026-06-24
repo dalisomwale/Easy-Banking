@@ -2,7 +2,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const API_URL =
-  process.env.REACT_APP_API_URL || "https://umozi-savings.onrender.com/api";
+  process.env.REACT_APP_API_URL ||
+  "https://umozi-savings.onrender.com/api";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -22,7 +23,7 @@ api.interceptors.request.use((config) => {
   const skipGroupEndpoints = ["/groups", "/auth"];
 
   const shouldSkip = skipGroupEndpoints.some(
-    (ep) => config.url && config.url.includes(ep),
+    (ep) => config.url && config.url.includes(ep)
   );
 
   if (groupId && !shouldSkip) {
@@ -57,16 +58,21 @@ api.interceptors.response.use(
 
     if (status === 401) {
       toast.error(
-        "Authentication failed. Please log in again if the problem persists.",
+        "Authentication failed. Please log in again if the problem persists."
       );
     }
 
-    if (status === 400 && error.response?.data?.message?.includes("groupId")) {
-      toast.error("Please select a group before performing this action.");
+    if (
+      status === 400 &&
+      error.response?.data?.message?.includes("groupId")
+    ) {
+      toast.error(
+        "Please select a group before performing this action."
+      );
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;
