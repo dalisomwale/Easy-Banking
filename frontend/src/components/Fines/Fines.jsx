@@ -16,10 +16,10 @@ import {
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
-// ─── Shared components ────────────────────────────────────────────────
-const GroupHeader = () => {
+// ─── Shared GroupHeader (same as LoanList) ─────────────────────────────
+const GroupHeader = ({ title }) => {
   const groupName = localStorage.getItem("selectedGroupName") || "My Group";
-  const role = localStorage.getItem("selectedGroupRole");
+  const displayTitle = title || groupName;
   return (
     <div
       style={{
@@ -52,10 +52,33 @@ const GroupHeader = () => {
           borderRadius: "50%",
         }}
       />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            letterSpacing: "-0.3px",
+            margin: 0,
+            lineHeight: 1.2,
+          }}
+        >
+          {displayTitle}
+        </p>
+      </div>
     </div>
   );
 };
 
+// ─── Hero Fund Card (unchanged) ────────────────────────────────────────
 const HeroFundCard = ({
   label,
   amount,
@@ -133,6 +156,14 @@ const Fines = () => {
   const groupId = localStorage.getItem("selectedGroupId");
   const role = localStorage.getItem("selectedGroupRole");
   const memberId = localStorage.getItem("member_id");
+
+  // ── Mobile detection ──
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("fines");
@@ -356,7 +387,9 @@ const Fines = () => {
 
     return (
       <div>
-        <GroupHeader />
+        {/* Mobile header */}
+        {isMobile && <GroupHeader title="Fines" />}
+
         <HeroFundCard
           label="My Fines"
           amount={formatMoney(totalFines)}
@@ -496,10 +529,13 @@ const Fines = () => {
   }
 
   // ──────────────────────────────────────────────────────────────
-  // ADMIN VIEW – responsive stats cards
+  // ADMIN VIEW – responsive stats cards with mobile header
   // ──────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto px-2 space-y-5">
+      {/* Mobile header */}
+      {isMobile && <GroupHeader title="Manage Fines" />}
+
       {/* Stats cards – 2 columns on mobile, 4 on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
