@@ -4,6 +4,68 @@ import { FiDownload, FiUsers, FiDollarSign, FiBookOpen } from "react-icons/fi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
+// ── Shared GroupHeader ──
+const GroupHeader = ({ title }) => {
+  const groupName = localStorage.getItem("selectedGroupName") || "My Group";
+  const displayTitle = title || groupName;
+  return (
+    <div
+      style={{
+        background: "#064E3B",
+        borderRadius: "0 0 2rem 2rem",
+        padding: "1.5rem 1.5rem 3.75rem",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 180,
+          height: 180,
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: -60,
+          left: "30%",
+          width: 240,
+          height: 240,
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            letterSpacing: "-0.3px",
+            margin: 0,
+            lineHeight: 1.2,
+          }}
+        >
+          {displayTitle}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const Reports = () => {
   const navigate = useNavigate();
   const groupId = localStorage.getItem("selectedGroupId");
@@ -16,6 +78,14 @@ const Reports = () => {
     total_repayments: 0,
   });
   const [loading, setLoading] = useState(true);
+
+  // ── mobile detection ──
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Redirect if not admin
   useEffect(() => {
@@ -62,16 +132,23 @@ const Reports = () => {
   if (loading) return <div className="text-center py-10">Loading...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Reports</h1>
-        <button
-          onClick={exportCSV}
-          className="btn-primary flex items-center gap-2"
-        >
-          <FiDownload /> Export CSV
-        </button>
-      </div>
+    <div className="space-y-6 max-w-7xl mx-auto px-2">
+      {/* Mobile header */}
+      {isMobile && <GroupHeader title="Manage Reports" />}
+
+      {/* Desktop heading – hidden on mobile */}
+      {!isMobile && (
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <button
+            onClick={exportCSV}
+            className="btn-primary flex items-center gap-2"
+          >
+            <FiDownload /> Export CSV
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
