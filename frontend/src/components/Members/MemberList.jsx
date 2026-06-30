@@ -4,6 +4,68 @@ import { FiPlus, FiTrash2, FiEye, FiSearch } from "react-icons/fi";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
+// ── Shared GroupHeader ──
+const GroupHeader = ({ title }) => {
+  const groupName = localStorage.getItem("selectedGroupName") || "My Group";
+  const displayTitle = title || groupName;
+  return (
+    <div
+      style={{
+        background: "#064E3B",
+        borderRadius: "0 0 2rem 2rem",
+        padding: "1.5rem 1.5rem 3.75rem",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 180,
+          height: 180,
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: -60,
+          left: "30%",
+          width: 240,
+          height: 240,
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            letterSpacing: "-0.3px",
+            margin: 0,
+            lineHeight: 1.2,
+          }}
+        >
+          {displayTitle}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const MemberList = () => {
   const navigate = useNavigate();
   const [members, setMembers] = useState([]);
@@ -12,6 +74,14 @@ const MemberList = () => {
   const groupId = localStorage.getItem("selectedGroupId");
   const role = localStorage.getItem("selectedGroupRole");
   const isAdmin = role === "admin";
+
+  // ── mobile detection ──
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (groupId) fetchMembers();
@@ -58,17 +128,23 @@ const MemberList = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-2">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Members</h1>
-        {isAdmin && (
-          <button
-            onClick={() => navigate("/app/members/invite")} // ✅ email‑only invite form
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <FiPlus /> Add Member (by email)
-          </button>
-        )}
-      </div>
+      {/* Mobile header */}
+      {isMobile && <GroupHeader title="Manage Members" />}
+
+      {/* Desktop heading – hidden on mobile */}
+      {!isMobile && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-800">Members</h1>
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/app/members/invite")}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <FiPlus /> Add Member (by email)
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
         <div className="relative">
