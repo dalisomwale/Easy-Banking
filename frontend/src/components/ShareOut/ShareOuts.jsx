@@ -22,6 +22,68 @@ import {
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
+// ── Shared GroupHeader (copied from LoanList) ──
+const GroupHeader = ({ title }) => {
+  const groupName = localStorage.getItem("selectedGroupName") || "My Group";
+  const displayTitle = title || groupName;
+  return (
+    <div
+      style={{
+        background: "#064E3B",
+        borderRadius: "0 0 2rem 2rem",
+        padding: "1.5rem 1.5rem 3.75rem",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 180,
+          height: 180,
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: -60,
+          left: "30%",
+          width: 240,
+          height: 240,
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            letterSpacing: "-0.3px",
+            margin: 0,
+            lineHeight: 1.2,
+          }}
+        >
+          {displayTitle}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const ShareOuts = () => {
   const navigate = useNavigate();
   const groupId = localStorage.getItem("selectedGroupId");
@@ -47,6 +109,14 @@ const ShareOuts = () => {
     share_out_date: "",
     notes: "",
   });
+
+  // ── mobile detection ──
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const toNumber = (val) => (isNaN(Number(val)) ? 0 : Number(val));
   const formatMoney = (v) => `K${v.toFixed(2)}`;
@@ -98,8 +168,7 @@ const ShareOuts = () => {
     if (groupId) loadAll();
   }, [groupId, loadAll]);
 
-  // ── Cycle Actions ──
-
+  // ── Cycle Actions (unchanged) ──
   const handleCreateCycle = async (e) => {
     e.preventDefault();
     try {
@@ -232,13 +301,14 @@ const ShareOuts = () => {
     );
   }
 
-  // ── Render ──
-
   const profit = stats.totalInterest + stats.totalFines;
 
   return (
     <div className="max-w-7xl mx-auto px-2 space-y-5">
-      {/* Total Share-Out Fund Card – no subtext */}
+      {/* Mobile header */}
+      {isMobile && <GroupHeader title="Manage Share-Outs" />}
+
+      {/* Total Share-Out Fund Card */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
         <p className="text-gray-500 text-sm font-medium">
           Total Share-Out Fund
@@ -285,7 +355,7 @@ const ShareOuts = () => {
         </div>
       </div>
 
-      {/* Cycles Table */}
+      {/* Cycles Table (unchanged) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-800">Cycles</h2>
@@ -433,7 +503,7 @@ const ShareOuts = () => {
         </div>
       </div>
 
-      {/* Cycle Details */}
+      {/* Cycle Details (unchanged) */}
       {selectedCycle && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -518,7 +588,7 @@ const ShareOuts = () => {
         </div>
       )}
 
-      {/* Create Cycle Modal */}
+      {/* Create Cycle Modal (unchanged) */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
