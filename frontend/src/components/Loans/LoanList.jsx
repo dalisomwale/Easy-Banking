@@ -22,7 +22,7 @@ import {
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
-// ── helper: safely read a localStorage value, treating "null"/"undefined"/"" as empty ──
+// ── helper: safely read a localStorage value ──
 const readStoredId = (key) => {
   const v = localStorage.getItem(key);
   if (!v || v === "null" || v === "undefined") return null;
@@ -37,13 +37,13 @@ const HeroHeader = () => (
   </div>
 );
 
-// ── Floating hero card ── now accepts optional color prop ─────────────
-const HeroCard = ({ label, value, sub, color = "#065F46" }) => (
+// ── Floating hero card ── no color prop (kept as green)
+const HeroCard = ({ label, value, sub }) => (
   <div style={styles.heroCardWrap}>
     <div style={styles.heroCard}>
       <div style={{ flex: 1 }}>
         <p style={styles.heroLabel}>{label}</p>
-        <p style={{ ...styles.heroAmount, color }}>{value}</p>
+        <p style={{ ...styles.heroAmount }}>{value}</p>
         <p style={styles.heroSub}>{sub}</p>
       </div>
     </div>
@@ -69,7 +69,6 @@ const LoanList = () => {
   const [filters, setFilters] = useState({ member: "", status: "all" });
 
   // ── Helper: fetch member ID ──
-  // Always returns either a valid id or null. Never throws.
   const fetchMemberId = useCallback(async () => {
     if (!groupId || role !== "member") return null;
     if (memberId) return memberId;
@@ -91,8 +90,6 @@ const LoanList = () => {
   }, [groupId, role, memberId]);
 
   // ── Fetch functions ──
-  // Each fetch function is self-contained and never throws — it always
-  // resolves, setting error state internally on failure.
   const fetchAdminLoans = useCallback(async () => {
     if (!groupId) return;
     try {
@@ -159,19 +156,16 @@ const LoanList = () => {
   // ── Main load effect ──
   useEffect(() => {
     let isMounted = true;
-
     const loadData = async () => {
       if (!isMounted) return;
       setLoading(true);
       setLoadingStats(true);
       setError(null);
-
       try {
         if (!groupId) {
           setError("No group selected.");
           return;
         }
-
         if (role === "admin") {
           await Promise.all([
             fetchAdminStats(),
@@ -180,17 +174,12 @@ const LoanList = () => {
           ]);
         } else if (role === "member") {
           const id = memberId || (await fetchMemberId());
-          if (!id) {
-            // error already set inside fetchMemberId
-            return;
-          }
+          if (!id) return;
           await Promise.all([fetchMemberLoans(id), fetchRecentActivities()]);
         } else {
           setError("User role not identified.");
         }
       } catch (err) {
-        // Final safety net — guarantees loading never gets stuck
-        // even if something unexpected throws above.
         console.error("Unexpected error loading loans:", err);
         setError("Something went wrong loading loans. Please try refreshing.");
       } finally {
@@ -200,9 +189,7 @@ const LoanList = () => {
         }
       }
     };
-
     loadData();
-
     return () => {
       isMounted = false;
     };
@@ -225,9 +212,7 @@ const LoanList = () => {
         fetchAdminLoans();
         fetchRecentActivities();
       } else {
-        if (memberId) {
-          fetchMemberLoans(memberId);
-        }
+        if (memberId) fetchMemberLoans(memberId);
         fetchRecentActivities();
       }
     };
@@ -427,7 +412,7 @@ const LoanList = () => {
     );
   }
 
-  /* ── MEMBER VIEW ── */
+  /* ── MEMBER VIEW ── (unchanged) */
   if (role === "member") {
     return (
       <div style={styles.page}>
@@ -436,7 +421,6 @@ const LoanList = () => {
           label="MY LOANS"
           value={`K${totalOutstanding.toLocaleString("en", { minimumFractionDigits: 2 })}`}
           sub="outstanding balance"
-          color="#EA580C" // 🔥 ORANGE
         />
         <div style={styles.requestCard}>
           <button
@@ -559,39 +543,67 @@ const LoanList = () => {
     );
   }
 
-  /* ── ADMIN VIEW ── (unchanged) */
+  /* ── ADMIN VIEW ── (responsive stats cards) */
   return (
     <div className="max-w-7xl mx-auto px-2 space-y-5">
-      {/* Stats Cards – no icons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Total Loan Amount</p>
-          <p className="text-3xl font-bold text-gray-700 mt-2">
+      {/* Stats Cards – 2 columns on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Total Loan Amount
+          </p>
+          <p className="text-xl sm:text-3xl font-bold text-gray-700 mt-1 sm:mt-2">
             {formatMoney(stats.totalLoanAmount || 0)}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Paid Loan Amount</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Paid Loan Amount
+          </p>
+          <p className="text-xl sm:text-3xl font-bold text-blue-600 mt-1 sm:mt-2">
             {formatMoney(stats.paidLoanAmount || 0)}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Pending</p>
-          <p className="text-3xl font-bold text-amber-600 mt-2">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Pending
+          </p>
+          <p className="text-xl sm:text-3xl font-bold text-amber-600 mt-1 sm:mt-2">
             {stats.pendingLoans || 0}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Active Loans</p>
-          <p className="text-3xl font-bold text-emerald-600 mt-2">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Active Loans
+          </p>
+          <p className="text-xl sm:text-3xl font-bold text-emerald-600 mt-1 sm:mt-2">
             {stats.activeLoans || 0}
           </p>
           <p className="text-xs text-gray-400 mt-1">
             Outstanding: {formatMoney(stats.outstandingAmount || 0)}
+          </p>
+        </div>
+      </div>
+
+      {/* Extra row: Members with Loans and Paid Loan Amount (2 columns) */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Members with Loans
+          </p>
+          <p className="text-xl sm:text-3xl font-bold text-gray-700 mt-1 sm:mt-2">
+            {stats.membersWithLoans || 0}
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Paid Loan Amount
+          </p>
+          <p className="text-xl sm:text-3xl font-bold text-blue-600 mt-1 sm:mt-2">
+            {formatMoney(stats.paidLoanAmount || 0)}
           </p>
         </div>
       </div>
@@ -844,7 +856,7 @@ const styles = {
   heroAmount: {
     fontSize: 34,
     fontWeight: 700,
-    color: "#065F46", // default green
+    color: "#065F46",
     margin: "4px 0 2px",
     lineHeight: 1,
     fontVariantNumeric: "tabular-nums",
@@ -877,9 +889,7 @@ const styles = {
     justifyContent: "center",
     gap: 8,
     transition: "background 0.2s ease",
-    ":hover": {
-      background: "#047857",
-    },
+    ":hover": { background: "#047857" },
   },
 
   section: {
@@ -916,9 +926,7 @@ const styles = {
     cursor: "pointer",
     backgroundColor: "#fff",
     transition: "background 0.1s ease",
-    ":hover": {
-      backgroundColor: "#F9FAFB",
-    },
+    ":hover": { backgroundColor: "#F9FAFB" },
   },
   summaryLeft: {
     display: "flex",
@@ -1016,10 +1024,7 @@ const styles = {
     gap: 6,
     width: "100%",
     transition: "all 0.2s ease",
-    ":hover": {
-      background: "#047857",
-      transform: "scale(1.01)",
-    },
+    ":hover": { background: "#047857", transform: "scale(1.01)" },
   },
 
   emptyState: {

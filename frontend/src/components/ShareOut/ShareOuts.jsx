@@ -248,32 +248,38 @@ const ShareOuts = () => {
         </p>
       </div>
 
-      {/* Stats Grid – no icons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Total Savings</p>
-          <p className="text-2xl font-bold text-emerald-700 mt-1">
+      {/* Stats Grid – 2 columns on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Total Savings
+          </p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-700 mt-1 sm:mt-2">
             {formatMoney(stats.totalSavings)}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Profit</p>
-          <p className="text-2xl font-bold text-amber-600 mt-1">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">Profit</p>
+          <p className="text-xl sm:text-2xl font-bold text-amber-600 mt-1 sm:mt-2">
             {formatMoney(profit)}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Interest Earned</p>
-          <p className="text-2xl font-bold text-amber-600 mt-1">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Interest Earned
+          </p>
+          <p className="text-xl sm:text-2xl font-bold text-amber-600 mt-1 sm:mt-2">
             {formatMoney(stats.totalInterest)}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <p className="text-gray-500 text-sm font-medium">Fines Collected</p>
-          <p className="text-2xl font-bold text-red-600 mt-1">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">
+            Fines Collected
+          </p>
+          <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1 sm:mt-2">
             {formatMoney(stats.totalFines)}
           </p>
         </div>

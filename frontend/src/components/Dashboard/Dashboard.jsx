@@ -331,7 +331,7 @@ const Dashboard = () => {
   const AdminDashboard = () => {
     const totalProfit = totalInterest + adminFineStats.total_paid;
     return (
-      <div>
+      <div className="px-2 sm:px-4">
         <GroupHeader />
         <HeroFundCard
           label="Total Group Funds"
@@ -340,81 +340,74 @@ const Dashboard = () => {
           icon={FiTrendingUp}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5 px-4">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">
-                  Total Members
-                </p>
-                <p className="text-3xl font-bold text-emerald-700 mt-2">
-                  {stats.total_members}
-                </p>
-              </div>
+        {/* 🔥 Cards – responsive: 2 columns on mobile, 3 on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-5">
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">
+                Total Members
+              </p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-700 mt-1 sm:mt-2">
+                {stats.total_members}
+              </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">
-                  Total Savings
-                </p>
-                <p className="text-3xl font-bold text-emerald-700 mt-2">
-                  {formatMoney(stats.total_savings)}
-                </p>
-              </div>
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">
+                Total Savings
+              </p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-700 mt-1 sm:mt-2">
+                {formatMoney(stats.total_savings)}
+              </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">
-                  Total Profit
-                </p>
-                <p className="text-3xl font-bold text-amber-600 mt-2">
-                  {formatMoney(totalProfit)}
-                </p>
-              </div>
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">
+                Total Profit
+              </p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-amber-600 mt-1 sm:mt-2">
+                {formatMoney(totalProfit)}
+              </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">Total Fines</p>
-                <p className="text-3xl font-bold text-red-600 mt-2">
-                  {formatMoney(adminFineStats.total_issued)}
-                </p>
-              </div>
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">
+                Total Fines
+              </p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 mt-1 sm:mt-2">
+                {formatMoney(adminFineStats.total_issued)}
+              </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">
-                  Total Interest
-                </p>
-                <p className="text-3xl font-bold text-indigo-600 mt-2">
-                  {formatMoney(totalInterest)}
-                </p>
-              </div>
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">
+                Total Interest
+              </p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-600 mt-1 sm:mt-2">
+                {formatMoney(totalInterest)}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mx-4 mt-5 mb-6">
-          <div className="p-6 border-b border-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-5 mb-6">
+          <div className="p-4 sm:p-6 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <FiActivity className="text-amber-500" size={20} />
-              <h2 className="text-xl font-semibold text-gray-800">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
                 Recent Activity
               </h2>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {stats.recent_transactions.length === 0 ? (
               <p className="text-gray-400 text-center py-8">
                 No transactions yet
@@ -459,7 +452,7 @@ const Dashboard = () => {
     );
   };
 
-  // ── Member Dashboard ── (Z‑layout: Savings|Loan on top, Fines|Total Members below)
+  // ── Member Dashboard ── (unchanged, already mobile‑friendly)
   const MemberDashboard = () => (
     <div className="max-w-md mx-auto">
       <GroupHeader />

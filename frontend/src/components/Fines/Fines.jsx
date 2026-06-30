@@ -253,7 +253,6 @@ const Fines = () => {
       toast.success("Fine issued successfully");
       setFormData({ member_id: "", rule_id: "", amount: "", reason: "" });
       await loadAll();
-      // Notify dashboard if open
       window.dispatchEvent(new Event("fine-paid"));
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to issue fine");
@@ -280,7 +279,6 @@ const Fines = () => {
       toast.success("Rule created");
       setRuleForm({ name: "", description: "", amount: "", status: "active" });
       await fetchRules();
-      // Notify dashboard if open
       window.dispatchEvent(new Event("fine-paid"));
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to create rule";
@@ -498,50 +496,48 @@ const Fines = () => {
   }
 
   // ──────────────────────────────────────────────────────────────
-  // ADMIN VIEW (matches AllSavings, MemberList styling)
+  // ADMIN VIEW – responsive stats cards
   // ──────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto px-2 space-y-5">
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Total Fines</p>
-              <p className="text-3xl font-bold text-red-600 mt-2">
-                {formatMoney(stats.total_issued)}
-              </p>
-            </div>
+      {/* Stats cards – 2 columns on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div>
+            <p className="text-gray-500 text-xs sm:text-sm font-medium">
+              Total Fines
+            </p>
+            <p className="text-xl sm:text-3xl font-bold text-red-600 mt-1 sm:mt-2">
+              {formatMoney(stats.total_issued)}
+            </p>
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Paid</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {formatMoney(stats.total_paid)}
-              </p>
-            </div>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div>
+            <p className="text-gray-500 text-xs sm:text-sm font-medium">Paid</p>
+            <p className="text-xl sm:text-3xl font-bold text-green-600 mt-1 sm:mt-2">
+              {formatMoney(stats.total_paid)}
+            </p>
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Outstanding</p>
-              <p className="text-3xl font-bold text-amber-600 mt-2">
-                {formatMoney(stats.outstanding)}
-              </p>
-            </div>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div>
+            <p className="text-gray-500 text-xs sm:text-sm font-medium">
+              Outstanding
+            </p>
+            <p className="text-xl sm:text-3xl font-bold text-amber-600 mt-1 sm:mt-2">
+              {formatMoney(stats.outstanding)}
+            </p>
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Members Fined</p>
-              <p className="text-3xl font-bold text-gray-700 mt-2">
-                {stats.members_fined}
-              </p>
-            </div>
+        <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div>
+            <p className="text-gray-500 text-xs sm:text-sm font-medium">
+              Members Fined
+            </p>
+            <p className="text-xl sm:text-3xl font-bold text-gray-700 mt-1 sm:mt-2">
+              {stats.members_fined}
+            </p>
           </div>
         </div>
       </div>
@@ -568,7 +564,7 @@ const Fines = () => {
         </button>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content – unchanged */}
       {activeTab === "fines" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">

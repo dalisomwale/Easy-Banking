@@ -42,7 +42,7 @@ const Layout = () => {
 
   const handleSwitchGroup = () => navigate("/group-select");
 
-  // Build navigation items based on role
+  // ─── Build navigation items (Profile removed) ──────────────────────
   let navItems = [{ path: "/app/dashboard", label: "Home", icon: FiHome }];
 
   if (isAdmin) {
@@ -66,11 +66,7 @@ const Layout = () => {
     );
   }
 
-  if (isAdmin) {
-    navItems.push({ path: "/app/profile", label: "Profile", icon: FiUser });
-  }
-
-  const isMemberDashboard = !isAdmin && location.pathname === "/app/dashboard";
+  // Profile is now in header – removed from navItems
 
   /* ── MOBILE ── */
   if (isMobile) {
@@ -78,7 +74,6 @@ const Layout = () => {
       <div
         style={{ minHeight: "100vh", background: "#F8F9FB", paddingBottom: 72 }}
       >
-        {/* 🔥 Mobile header – solid dark green */}
         <header
           style={{
             background: "#04382C", // solid dark green
@@ -95,14 +90,13 @@ const Layout = () => {
         >
           <Logo size="default" variant="light" showSubtitle />
 
-          {isMemberDashboard && (
-            <FiUser
-              color="#fff"
-              size={22}
-              onClick={() => navigate("/app/profile")}
-              style={{ cursor: "pointer" }}
-            />
-          )}
+          {/* 🔥 Profile icon – always visible */}
+          <FiUser
+            color="#fff"
+            size={22}
+            onClick={() => navigate("/app/profile")}
+            style={{ cursor: "pointer" }}
+          />
         </header>
 
         <main>
@@ -354,25 +348,26 @@ const Layout = () => {
             }}
           >
             {navItems.find((i) => i.path === location.pathname)?.label ||
-              "Easy Banking"}
+              (location.pathname === "/app/profile"
+                ? "Profile"
+                : "Easy Banking")}
           </h1>
 
-          {isMemberDashboard && (
-            <div
-              onClick={() => navigate("/app/profile")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                cursor: "pointer",
-                color: "#fff",
-                fontSize: 14,
-              }}
-            >
-              <FiUser size={18} />
-              <span style={{ fontWeight: 500 }}>Profile</span>
-            </div>
-          )}
+          {/* 🔥 Profile link – always visible */}
+          <div
+            onClick={() => navigate("/app/profile")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+              color: "#fff",
+              fontSize: 14,
+            }}
+          >
+            <FiUser size={18} />
+            <span style={{ fontWeight: 500 }}>Profile</span>
+          </div>
         </div>
 
         <main style={{ padding: 24 }}>
