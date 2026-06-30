@@ -29,7 +29,7 @@ const readStoredId = (key) => {
   return v;
 };
 
-// ── Shared hero header ────────────────────────────────────────────────
+// ── Shared hero header (decorative circles) ───────────────────────────
 const HeroHeader = () => (
   <div style={styles.heroHeader}>
     <div style={styles.circle1} />
@@ -37,7 +37,80 @@ const HeroHeader = () => (
   </div>
 );
 
-// ── Floating hero card ── no color prop (kept as green)
+// ── GroupHeader (with custom title support) ───────────────────────────
+const GroupHeader = ({ title }) => {
+  const groupName = localStorage.getItem("selectedGroupName") || "My Group";
+  const role = localStorage.getItem("selectedGroupRole");
+  const displayTitle = title || groupName;
+  return (
+    <div
+      style={{
+        background: "#064E3B",
+        borderRadius: "0 0 2rem 2rem",
+        padding: "1.5rem 1.5rem 3.75rem",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 180,
+          height: 180,
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: -60,
+          left: "30%",
+          width: 240,
+          height: 240,
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: "50%",
+        }}
+      />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            letterSpacing: "-0.3px",
+            margin: 0,
+            lineHeight: 1.2,
+          }}
+        >
+          {displayTitle}
+        </p>
+        <p
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "#A7F3D0",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            margin: 0,
+          }}
+        ></p>
+      </div>
+    </div>
+  );
+};
+
+// ── Floating hero card ──
 const HeroCard = ({ label, value, sub }) => (
   <div style={styles.heroCardWrap}>
     <div style={styles.heroCard}>
@@ -67,6 +140,13 @@ const LoanList = () => {
   const [expandedLoanId, setExpandedLoanId] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [filters, setFilters] = useState({ member: "", status: "all" });
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // ── Helper: fetch member ID ──
   const fetchMemberId = useCallback(async () => {
@@ -543,9 +623,12 @@ const LoanList = () => {
     );
   }
 
-  /* ── ADMIN VIEW ── (responsive stats cards) */
+  /* ── ADMIN VIEW ── (responsive stats cards + GroupHeader on mobile) ── */
   return (
     <div className="max-w-7xl mx-auto px-2 space-y-5">
+      {/* Conditionally render GroupHeader with custom title on mobile */}
+      {isMobile ? <GroupHeader title="Loan Management" /> : <HeroHeader />}
+
       {/* Stats Cards – 2 columns on mobile, 4 on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
