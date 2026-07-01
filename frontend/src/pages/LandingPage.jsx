@@ -221,7 +221,7 @@ const LandingPage = () => {
       ],
       excluded: [
         "Activity Tracking",
-        "Member Management Tools",
+        "Custom Share-Out Formulas",
         "Role Management",
         "Advanced Reports",
         "PDF/Excel Export",
@@ -244,7 +244,8 @@ const LandingPage = () => {
         "Member Dashboard",
         "Admin Dashboard",
         "Activity Tracking",
-        "Member Management",
+        "Custom Share-Out Formulas",
+
         "Role Management (Admin, Treasurer, Secretary)",
         "Advanced Reports",
         "PDF/Excel Export",
