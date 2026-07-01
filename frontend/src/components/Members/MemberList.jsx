@@ -115,7 +115,6 @@ const MemberList = () => {
     }
   };
 
-  const toNumber = (val) => (isNaN(Number(val)) ? 0 : Number(val));
   const filteredMembers = members.filter(
     (m) =>
       m.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,19 +145,42 @@ const MemberList = () => {
         </div>
       )}
 
+      {/* Search bar – on mobile, combined with Add Member button */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <div className="relative">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by name, phone, or NRC..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        {isMobile && isAdmin ? (
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, phone, or NRC..."
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => navigate("/app/members/invite")}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-1 text-sm whitespace-nowrap"
+            >
+              <FiPlus size={16} /> Add Member
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, phone, or NRC..."
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
+      {/* Member list (admin view) */}
       {isAdmin ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
@@ -226,6 +248,7 @@ const MemberList = () => {
           </div>
         </div>
       ) : (
+        /* Member view (non-admin) */
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="divide-y divide-gray-100">
             {filteredMembers.length === 0 ? (
